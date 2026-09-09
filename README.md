@@ -96,7 +96,7 @@ git branch
 ```
 The branch with * is your current branch.
 
-### 4. Switch between branches
+### 4. Switch between branches
 ```bash
 git switch main
 ```
