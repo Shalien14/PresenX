@@ -128,14 +128,14 @@ git push
 
 After pushing your branch:
 
-Go to the GitHub repository.
-Open Pull Requests.
-Click New Pull Request.
-Select your feature branch.
-Set main as the base branch.
-Describe your changes.
-Create the Pull Request.
-Ask another team member to review it.
+- Go to the GitHub repository.
+- Open Pull Requests.
+- Click New Pull Request.
+- Select your feature branch.
+- Set main as the base branch.
+- Describe your changes.
+- Create the Pull Request.
+- Ask another team member to review it.
 
 8. After the Pull Request is merged
 
@@ -148,11 +148,11 @@ Your feature branch can then be deleted:
 ```bash
 git branch -d feature/ai-cv
 ```
-Important Rules
-❌ Do not work directly on main.
-❌ Do not push directly to main.
-❌ Do not use git push --force on main.
-✅ Create a feature branch for your work.
-✅ Pull the latest main before starting new work.
-✅ Create a Pull Request when your work is ready.
-✅ Get at least one review before merging.
+### Important Rules
+- ❌ Do not work directly on main. 
+- ❌ Do not push directly to main.
+- ❌ Do not use git push --force on main.
+- ✅ Create a feature branch for your work.
+- ✅ Pull the latest main before starting new work.
+- ✅ Create a Pull Request when your work is ready.
+- ✅ Get at least one review before merging.
