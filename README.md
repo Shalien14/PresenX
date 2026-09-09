@@ -104,7 +104,7 @@ or:
 ```bash
 git switch feature/ai-cv
 ```
-### 5. Save your changes
+### 5. Save your changes
 ```bash
 git add .
 git commit -m "Describe your changes"
@@ -113,7 +113,7 @@ Example:
 ```bash
 git commit -m "Add face detection module"
 ```
-### 6. Push your branch
+### 6. Push your branch
 
 First time:
 ```bash
@@ -124,7 +124,7 @@ After that:
 ```bash
 git push
 ```
-### 7. Create a Pull Request
+### 7. Create a Pull Request
 
 After pushing your branch:
 
