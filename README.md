@@ -73,14 +73,14 @@ main
 └── feature/frontend
 ```
 
-1. Get the latest changes
+### 1. Get the latest changes
 
 Before starting work:
 ```bash
 git switch main
 git pull origin main
 ```
-2. Create a new branch
+### 2. Create a new branch
 
 Create a branch for your feature:
 ```bash
@@ -90,13 +90,13 @@ Example:
 ```bash
 git switch -c feature/ai-cv
 ```
-3. Check your current branch
+### 3. Check your current branch
 ```bash
 git branch
 ```
 The branch with * is your current branch.
 
-4. Switch between branches
+### 4. Switch between branches
 ```bash
 git switch main
 ```
@@ -104,7 +104,7 @@ or:
 ```bash
 git switch feature/ai-cv
 ```
-5. Save your changes
+### 5. Save your changes
 ```bash
 git add .
 git commit -m "Describe your changes"
@@ -113,7 +113,7 @@ Example:
 ```bash
 git commit -m "Add face detection module"
 ```
-6. Push your branch
+### 6. Push your branch
 
 First time:
 ```bash
@@ -124,7 +124,7 @@ After that:
 ```bash
 git push
 ```
-7. Create a Pull Request
+### 7. Create a Pull Request
 
 After pushing your branch:
 
@@ -137,7 +137,7 @@ After pushing your branch:
 - Create the Pull Request.
 - Ask another team member to review it.
 
-8. After the Pull Request is merged
+### 8. After the Pull Request is merged
 
 Update your local main:
 ```bash
