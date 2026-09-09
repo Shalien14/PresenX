@@ -38,7 +38,7 @@ provide this information through a web application.
 - Backend framework
 - Database
 - HTML / CSS / JavaScript
-
+```text
 IoT
  └── Door monitoring
 
@@ -56,7 +56,7 @@ Backend
 Web
  ├── Public availability interface
  └── Higher-official/admin dashboard
-
+```
 ## Git & Branch Guide
 
 ### Branch Structure
