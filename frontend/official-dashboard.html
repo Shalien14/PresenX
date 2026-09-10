@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Presence - Official Dashboard</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <nav class="navbar">
+    <a href="index.html" class="nav-brand">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+      PresenX
+    </a>
+    <ul class="nav-links">
+      <li><a href="official-dashboard.html" class="nav-link active">Availability</a></li>
+      <li><a href="index.html" class="nav-link">Public View</a></li>
+      <li><a href="login.html" class="nav-link">Logout</a></li>
+    </ul>
+  </nav>
+
+  <main class="container">
+    <div class="page-header">
+      <h1>Official Availability Control</h1>
+      <p>Logged in as: <strong>Dr. Alistair Vance</strong> (Chief Medical Officer)</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+      <!-- Status Card -->
+      <div class="card-panel">
+        <h2 class="card-title">Current Public Status</h2>
+        <div style="margin: 1.5rem 0;">
+          <span id="current-status-badge" class="status-badge status-available">AVAILABLE</span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">
+          Last updated: <span id="current-last-updated">Today at 10:15 AM</span>
+        </p>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">
+          Assigned Room: <strong>Room 402 - Wing B</strong>
+        </p>
+      </div>
+
+      <!-- Update Form -->
+      <div class="card-panel">
+        <h2 class="card-title">Update Your Status</h2>
+        <form id="status-update-form">
+          <div style="margin-bottom: 1.25rem;">
+            <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Select New Status</label>
+            <select id="update-status-select" class="form-control">
+              <option value="AVAILABLE">AVAILABLE</option>
+              <option value="TEMPORARILY UNAVAILABLE">TEMPORARILY UNAVAILABLE</option>
+              <option value="ON OFFICIAL DUTY">ON OFFICIAL DUTY</option>
+              <option value="ABSENT">ABSENT</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    &copy; 2026 Smart Presence Monitoring System.
+  </footer>
+
+  <script src="js/script.js"></script>
+</body>
+</html>

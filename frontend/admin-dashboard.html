@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PresenX - Administrator Overview</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <nav class="navbar">
+    <a href="home.html" class="nav-brand">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+      PresenX <span style="font-size: 0.8rem; background: #e0e7ff; color: #4338ca; padding: 2px 8px; border-radius: 4px; margin-left: 8px;">ADMIN</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="admin-dashboard.html" class="nav-link active">Admin Dashboard</a></li>
+      <li><a href="index.html" class="nav-link">Public Directory</a></li>
+      <li><a href="login.html" class="nav-link">Login</a></li>
+    </ul>
+  </nav>
+
+  <main class="container">
+    <div class="page-header">
+      <h1>Administrative Monitoring & Statistics</h1>
+      <p>Real-time presence metrics, attendance status, and office distribution.</p>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div id="count-avail" class="count">0</div>
+        <div class="label">Available</div>
+      </div>
+      <div class="stat-box">
+        <div id="count-temp" class="count">0</div>
+        <div class="label">Temporarily Unavailable</div>
+      </div>
+      <div class="stat-box">
+        <div id="count-duty" class="count">0</div>
+        <div class="label">On Official Duty</div>
+      </div>
+      <div class="stat-box">
+        <div id="count-absent" class="count">0</div>
+        <div class="label">Absent</div>
+      </div>
+    </div>
+
+    <!-- Complete Registry with Attendance info -->
+    <div class="card-panel">
+      <h2 class="card-title">Department Officials Log</h2>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Official</th>
+              <th>Department</th>
+              <th>Room</th>
+              <th>Status</th>
+              <th>Internal Attendance</th>
+              <th>Last Changed</th>
+            </tr>
+          </thead>
+          <tbody id="admin-table-body">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    &copy; 2026 Smart Presence Monitoring System. Administrator Portal.
+  </footer>
+
+  <script src="js/script.js"></script>
+</body>
+</html>

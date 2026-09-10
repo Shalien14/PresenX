@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PresenX - Administrative Portal Login</title>
+  <style>
+    /* Design Tokens */
+    :root {
+      --bg-dark: #08111e;
+      --card-bg: #0f1d30;
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --text-main: #ffffff;
+      --text-muted: #94a3b8;
+      --input-bg: #16263d;
+      --input-border: #243b5a;
+      --danger: #ef4444;
+      --radius: 12px;
+      --transition: all 0.2s ease-in-out;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at 50% 10%, #152e4d 0%, var(--bg-dark) 100%);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* Minimal Navbar */
+    .login-nav {
+      padding: 1.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      text-decoration: none;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 1.15rem;
+      letter-spacing: -0.01em;
+    }
+
+    .nav-brand svg {
+      width: 24px;
+      height: 24px;
+      fill: var(--primary);
+    }
+
+    .btn-back {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: var(--transition);
+    }
+
+    .btn-back:hover {
+      color: #ffffff;
+    }
+
+    /* Centered Login Card */
+    .login-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      flex: 1;
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 440px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 2.5rem 2rem;
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6);
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .badge-admin {
+      display: inline-block;
+      background-color: rgba(37, 99, 235, 0.15);
+      border: 1px solid rgba(37, 99, 235, 0.35);
+      color: #60a5fa;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      margin-bottom: 0.75rem;
+    }
+
+    .login-header h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+    }
+
+    .login-header p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* Form Fields */
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+      color: #cbd5e1;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 0.75rem 0.9rem;
+      background-color: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      color: #ffffff;
+      font-size: 0.95rem;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .form-control:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+    }
+
+    /* Extra Options row */
+    .form-extra {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .remember-me {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .forgot-link {
+      color: #60a5fa;
+      text-decoration: none;
+    }
+
+    .forgot-link:hover {
+      text-decoration: underline;
+    }
+
+    /* Submit Button */
+    .btn-submit {
+      width: 100%;
+      padding: 0.85rem;
+      background-color: var(--primary);
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: var(--transition);
+    }
+
+    .btn-submit:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    /* Error Message Alert */
+    .error-banner {
+      display: none;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+      font-size: 0.85rem;
+      padding: 0.65rem 0.85rem;
+      border-radius: 6px;
+      margin-bottom: 1.25rem;
+      text-align: center;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      color: #64748b;
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Minimal Top Header -->
+  <nav class="login-nav">
+    <a href="home.html" class="nav-brand">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+      PresenX
+    </a>
+    <a href="index.html" class="btn-back">
+      &larr; Public Directory
+    </a>
+  </nav>
+
+  <!-- Login Form Box -->
+  <main class="login-container">
+    <div class="login-card">
+      <div class="login-header">
+        <span class="badge-admin">Authorized Access</span>
+        <h1>Official Portal</h1>
+        <p>Sign in to manage attendance or view system analytics</p>
+      </div>
+
+      <!-- Alert for validation errors -->
+      <div id="error-alert" class="error-banner"></div>
+
+      <form id="admin-login-form">
+        <!-- Role Level Selector -->
+        <div class="form-group">
+          <label class="form-label" for="login-role">Access Clearance</label>
+          <select id="login-role" class="form-control">
+            <option value="admin">Higher Official / System Administrator</option>
+            <option value="official">Office Official (Self-Service)</option>
+          </select>
+        </div>
+
+        <!-- Official ID or Work Email -->
+        <div class="form-group">
+          <label class="form-label" for="login-id">Government / Officer ID</label>
+          <input 
+            type="text" 
+            id="login-id" 
+            class="form-control" 
+            placeholder="e.g. ADM-4081 or name@gov.org" 
+            value="admin@smartpresence.gov"
+            required
+          >
+        </div>
+
+        <!-- Password -->
+        <div class="form-group">
+          <label class="form-label" for="login-password">Password</label>
+          <input 
+            type="password" 
+            id="login-password" 
+            class="form-control" 
+            placeholder="Enter secure password" 
+            value="••••••••"
+            required
+          >
+        </div>
+
+        <!-- Remember / Forgot row -->
+        <div class="form-extra">
+          <label class="remember-me">
+            <input type="checkbox" checked> Remember token
+          </label>
+          <a href="#" class="forgot-link" onclick="alert('Please contact the System Hardware & Network Administrator to reset biometrics or credentials.')">Forgot?</a>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn-submit">
+          Access Console &rarr;
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <footer>
+    Smart Presence Telemetry • Official Restricted Console
+  </footer>
+
+  <script>
+    document.getElementById('admin-login-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      
+      const role = document.getElementById('login-role').value;
+      const id = document.getElementById('login-id').value.trim();
+      const password = document.getElementById('login-password').value.trim();
+      const errorBox = document.getElementById('error-alert');
+
+      // Basic empty check
+      if (!id || !password) {
+        errorBox.textContent = 'Please enter both your Official ID and Password.';
+        errorBox.style.display = 'block';
+        return;
+      }
+
+      // Route according to the selected clearance tier
+      if (role === 'admin') {
+        window.location.href = 'official-dashboard.html';
+      } else {
+        window.location.href = 'official-dashboard.html';
+      }
+    });
+  </script>
+</body>
+</html>

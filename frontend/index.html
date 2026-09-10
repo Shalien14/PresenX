@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PresenX - Public Availability Directory</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <a href="home.html" class="nav-brand">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+      PresenX
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html" class="nav-link active">Directory</a></li>
+      <li><a href="admin-dashboard.html" class="nav-link btn-login">Admin Login</a></li>
+    </ul>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="container">
+    <div class="page-header">
+      <h1>Public Official Availability</h1>
+      <p>Real-time status check for department officers and executives.</p>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="search-filter-bar">
+      <input type="text" id="search-input" class="form-control" placeholder="Search official by name or position...">
+      <select id="department-filter" class="form-control">
+        <option value="ALL">All Departments</option>
+        <option value="Health Administration">Health Administration</option>
+        <option value="Legal Affairs">Legal Affairs</option>
+        <option value="Urban Development">Urban Development</option>
+        <option value="Finance & Taxation">Finance & Taxation</option>
+      </select>
+      <select id="status-filter" class="form-control">
+        <option value="ALL">All Statuses</option>
+        <option value="AVAILABLE">Available</option>
+        <option value="TEMPORARILY UNAVAILABLE">Temporarily Unavailable</option>
+        <option value="ON OFFICIAL DUTY">On Official Duty</option>
+        <option value="ABSENT">Absent</option>
+      </select>
+    </div>
+
+    <!-- Cards Grid -->
+    <div id="public-officials-grid" class="cards-grid">
+      <!-- Generated Dynamically via script.js -->
+    </div>
+  </main>
+
+  <footer>
+    &copy; 2026 Smart Presence Monitoring System. Designed for Public Clarity and Transparency.
+  </footer>
+
+  <script src="js/script.js"></script>
+</body>
+</html>
