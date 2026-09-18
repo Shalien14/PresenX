@@ -4,7 +4,6 @@
   "description": "",
   "main": "add_employees.js",
   "scripts": {
-  
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -12,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "better-sqlite3": "^13.0.3",
+    "cors": "^2.8.6",
     "express": "^5.2.1",
     "nodemon": "^3.1.14"
   }

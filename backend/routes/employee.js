@@ -5,7 +5,7 @@ const router=express.Router()
 
 router.get("/employees",(req,res)=>{
     const employees = db.prepare(`
-        SELECT employee_id, name, destiation
+        SELECT employee_id, name, designation, department, room
         FROM employees
         ORDER BY employee_id
     `).all();

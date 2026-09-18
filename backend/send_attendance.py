@@ -1,6 +1,6 @@
 import requests
 
-url = "http://localhost:5000/employee_atten/attendance"
+url = "http://localhost:5001/api/attendance"
 
 data = {
     "employeeId": "EMP001",

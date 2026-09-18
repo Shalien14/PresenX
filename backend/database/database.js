@@ -10,7 +10,9 @@ db.prepare(`
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         employee_id TEXT UNIQUE NOT NULL,
         name TEXT NOT NULL,
-        designation TEXT NOT NULL
+        designation TEXT NOT NULL,
+        department TEXT NOT NULL,
+        room TEXT NOT NULL
     )
 `).run();
 

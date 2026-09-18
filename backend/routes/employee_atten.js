@@ -26,7 +26,7 @@ router.get("/employees/:employeeId/attendance",(req,res)=>{
     const{date}=req.query
 
     const employee = db.prepare(`
-        SELECT employee_id, name, destination
+        SELECT employee_id, name, designation
         FROM employees
         WHERE employee_id = ?
     `).get(employeeId);
