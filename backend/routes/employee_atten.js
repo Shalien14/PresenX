@@ -78,5 +78,72 @@ router.get("/employees/:employeeId/attendance",(req,res)=>{
     });
 })
  
+// Get current official status
+router.get("/employees/:employeeId/status", (req, res) => {
+    const employeeId = req.params.employeeId;
+
+    const status = db.prepare(`
+        SELECT
+            employee_id,
+            presence,
+            availability,
+            updated_at
+        FROM official_status
+        WHERE employee_id = ?
+    `).get(employeeId);
+
+    if (!status) {
+        return res.status(404).json({
+            success: false,
+            message: "Official status not found."
+        });
+    }
+
+    res.json({
+        success: true,
+        status: status
+    });
+});
+
+// Update official availability
+router.put("/employees/:employeeId/status", (req, res) => {
+    const employeeId = req.params.employeeId;
+    const { availability } = req.body;
+
+    const allowedStatuses = [
+        "AVAILABLE",
+        "TEMPORARILY UNAVAILABLE",
+        "ON OFFICIAL DUTY"
+    ];
+
+    if (!allowedStatuses.includes(availability)) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid availability status."
+        });
+    }
+
+    const updatedAt = new Date().toISOString();
+
+    const result = db.prepare(`
+        UPDATE official_status
+        SET availability = ?, updated_at = ?
+        WHERE employee_id = ?
+    `).run(availability, updatedAt, employeeId);
+
+    if (result.changes === 0) {
+        return res.status(404).json({
+            success: false,
+            message: "Official status not found."
+        });
+    }
+
+    res.json({
+        success: true,
+        message: "Availability updated successfully.",
+        availability: availability,
+        updated_at: updatedAt
+    });
+});
 
 module.exports=router

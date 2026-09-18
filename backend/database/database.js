@@ -29,5 +29,23 @@ db.prepare(`
     )
 `).run();
 
+// Current official status
+db.prepare(`
+    CREATE TABLE IF NOT EXISTS official_status (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        employee_id TEXT UNIQUE NOT NULL,
+        presence TEXT NOT NULL CHECK(presence IN ('PRESENT', 'ABSENT')),
+        availability TEXT NOT NULL CHECK(
+            availability IN (
+                'AVAILABLE',
+                'TEMPORARILY UNAVAILABLE',
+                'ON OFFICIAL DUTY'
+            )
+        ),
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (employee_id) REFERENCES employees(employee_id)
+    )
+`).run();
+
 console.log("Database tables are ready")
 module.exports=db
