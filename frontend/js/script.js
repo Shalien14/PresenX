@@ -1,3 +1,4 @@
+const API_BASE_URL = "http://localhost:5001/api";
 // // Default initial data
 // const DEFAULT_OFFICIALS = [
 //   {
@@ -62,48 +63,44 @@
    ========================================================== */
 
 // Initial Static Data (Easily replaced with API data later)
-let officialsData = [
-  {
-    id: 1,
-    name: "Dr. Alistair Vance",
-    position: "Chief Medical Officer",
-    department: "Health Administration",
-    room: "Room 402 - Wing B",
-    status: "AVAILABLE",
-    lastUpdated: "Today at 10:15 AM",
-    attendance: "Present (Check-in 08:30 AM)"
-  },
-  {
-    id: 2,
-    name: "Sarah Jenkins, Esq.",
-    position: "Legal Counsel",
-    department: "Legal Affairs",
-    room: "Room 205 - Main Hall",
-    status: "ON OFFICIAL DUTY",
-    lastUpdated: "Today at 09:40 AM",
-    attendance: "Field Assignment"
-  },
-  {
-    id: 3,
-    name: "Marcus Thorne",
-    position: "Senior Town Planner",
-    department: "Urban Development",
-    room: "Room 110 - Ground Floor",
-    status: "TEMPORARILY UNAVAILABLE",
-    lastUpdated: "Today at 11:05 AM",
-    attendance: "Present (In Meeting)"
-  },
-  {
-    id: 4,
-    name: "Elena Rostova",
-    position: "Director of Revenue",
-    department: "Finance & Taxation",
-    room: "Room 301 - Wing A",
-    status: "ABSENT",
-    lastUpdated: "Yesterday at 04:50 PM",
-    attendance: "On Leave"
+let officialsData = [];
+async function loadOfficials() {
+  try {
+    const response = await fetch("http://localhost:5001/api/employees");
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch employees");
+    }
+
+    const data = await response.json();
+
+    officialsData = data.employees.map(employee => ({
+      id: employee.employee_id,
+      name: employee.name,
+      position: employee.designation,
+      department: employee.department,
+      room: employee.room,
+      status: "ABSENT",
+      lastUpdated: "Not available",
+      attendance: "No attendance data"
+    }));
+
+    renderPublicCards(officialsData);
+
+  } catch (error) {
+    console.error("Error loading officials:", error);
+
+    const container = document.getElementById("public-officials-grid");
+
+    if (container) {
+      container.innerHTML = `
+        <p style="grid-column: 1/-1; text-align: center;">
+          Unable to load officials from the server.
+        </p>
+      `;
+    }
   }
-];
+}
 
 // Helper: Status to CSS Class
 function getStatusClass(status) {
@@ -175,7 +172,7 @@ function initPublicSearch() {
 }
 
 // ----------------- Official Self Dashboard -----------------
-function initOfficialDashboard() {
+async function initOfficialDashboard() {
   const selectStatus = document.getElementById("update-status-select");
   const statusForm = document.getElementById("status-update-form");
   const currentBadge = document.getElementById("current-status-badge");
@@ -183,11 +180,41 @@ function initOfficialDashboard() {
 
   if (!statusForm) return;
 
-  // Assume logged in as official ID 1 (Dr. Alistair Vance)
-  const myProfile = officialsData[0];
+  // Temporary logged-in official
+  const myProfile = officialsData.find(
+    official => official.id === "EMP001"
+  );
+
+  if (!myProfile) {
+    console.error("EMP001 not found in officialsData");
+    return;
+  }
+
+  // Load current status from backend
+  try {
+    const response = await fetch(
+      "http://localhost:5001/api/employees/EMP001/status"
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch official status");
+    }
+
+    const data = await response.json();
+
+    if (data.success) {
+      myProfile.status = data.status.availability;
+      myProfile.lastUpdated = data.status.updated_at;
+    }
+
+  } catch (error) {
+    console.error("Error loading official status:", error);
+  }
 
   function refreshView() {
-    currentBadge.className = `status-badge ${getStatusClass(myProfile.status)}`;
+    currentBadge.className =
+      `status-badge ${getStatusClass(myProfile.status)}`;
+
     currentBadge.textContent = myProfile.status;
     lastUpdatedEl.textContent = myProfile.lastUpdated;
     selectStatus.value = myProfile.status;
@@ -195,17 +222,42 @@ function initOfficialDashboard() {
 
   refreshView();
 
-  statusForm.addEventListener("submit", (e) => {
+  statusForm.addEventListener("submit", async (e) => {
     e.preventDefault();
+
     const newStatus = selectStatus.value;
-    const now = new Date();
-    const timeString = `Today at ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
-    myProfile.status = newStatus;
-    myProfile.lastUpdated = timeString;
+    try {
+      const response = await fetch(
+        "http://localhost:5001/api/employees/EMP001/status",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            availability: newStatus
+          })
+        }
+      );
 
-    refreshView();
-    alert(`Status successfully updated to: ${newStatus}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to update status");
+      }
+
+      myProfile.status = data.availability;
+      myProfile.lastUpdated = data.updated_at;
+
+      refreshView();
+
+      alert(`Status successfully updated to: ${data.availability}`);
+
+    } catch (error) {
+      console.error("Error updating status:", error);
+      alert("Failed to update status.");
+    }
   });
 }
 
@@ -262,7 +314,9 @@ function initLogin() {
 }
 
 // Global DOM Loaded
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  await loadOfficials();
+
   initPublicSearch();
   initOfficialDashboard();
   initAdminDashboard();
