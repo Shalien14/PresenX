@@ -4,6 +4,8 @@
   "description": "",
   "main": "add_employees.js",
   "scripts": {
+    "start": "node server.js",
+    "setup": "node add_employees.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

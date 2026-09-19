@@ -148,6 +148,16 @@ Your feature branch can then be deleted:
 ```bash
 git branch -d feature/ai-cv
 ```
+
+### 9. Activate backend
+
+```
+cd PresenX/backend
+npm install
+npm run setup
+npm start
+```
+
 ### Important Rules
 - ❌ Do not work directly on main. 
 - ❌ Do not push directly to main.

@@ -66,7 +66,7 @@ const API_BASE_URL = "http://localhost:5001/api";
 let officialsData = [];
 async function loadOfficials() {
   try {
-    const response = await fetch("http://localhost:5001/api/employees");
+    const response = await fetch(`${API_BASE_URL}/employees`);
 
     if (!response.ok) {
       throw new Error("Failed to fetch employees");
@@ -74,23 +74,56 @@ async function loadOfficials() {
 
     const data = await response.json();
 
+    // Get employee profiles
     officialsData = data.employees.map(employee => ({
       id: employee.employee_id,
       name: employee.name,
       position: employee.designation,
       department: employee.department,
       room: employee.room,
-      status: "ABSENT",
-      lastUpdated: "Not available",
+      status: null,
+      lastUpdated: null,
       attendance: "No attendance data"
     }));
+
+    // Load real status for every employee
+    await Promise.all(
+      officialsData.map(async official => {
+        try {
+          const statusResponse = await fetch(
+            `${API_BASE_URL}/employees/${official.id}/status`
+          );
+
+          if (!statusResponse.ok) {
+            throw new Error(
+              `Failed to fetch status for ${official.id}`
+            );
+          }
+
+          const statusData = await statusResponse.json();
+
+          if (statusData.success) {
+            official.status = statusData.status.availability;
+            official.lastUpdated = statusData.status.updated_at;
+          }
+
+        } catch (error) {
+          console.error(
+            `Error loading status for ${official.id}:`,
+            error
+          );
+        }
+      })
+    );
 
     renderPublicCards(officialsData);
 
   } catch (error) {
     console.error("Error loading officials:", error);
 
-    const container = document.getElementById("public-officials-grid");
+    const container = document.getElementById(
+      "public-officials-grid"
+    );
 
     if (container) {
       container.innerHTML = `
@@ -180,20 +213,40 @@ async function initOfficialDashboard() {
 
   if (!statusForm) return;
 
-  // Temporary logged-in official
+  // Get the employee who logged in
+  const storedEmployee = sessionStorage.getItem("loggedInEmployee");
+
+  if (!storedEmployee) {
+    console.error("No logged-in employee found.");
+    window.location.href = "login.html";
+    return;
+  }
+
+  const loggedInEmployee = JSON.parse(storedEmployee);
+
+  // Find that employee in the loaded employee list
   const myProfile = officialsData.find(
-    official => official.id === "EMP001"
+    official => official.id === loggedInEmployee.employee_id
   );
 
   if (!myProfile) {
-    console.error("EMP001 not found in officialsData");
+    console.error(
+      `Employee ${loggedInEmployee.employee_id} not found in officialsData`
+    );
     return;
   }
+  const officialName = document.getElementById("official-name");
+  const officialPosition = document.getElementById("official-position");
+  const officialRoom = document.getElementById("official-room");
+
+  officialName.textContent = myProfile.name;
+  officialPosition.textContent = myProfile.position;
+  officialRoom.textContent = myProfile.room;
 
   // Load current status from backend
   try {
     const response = await fetch(
-      "http://localhost:5001/api/employees/EMP001/status"
+      `${API_BASE_URL}/employees/${loggedInEmployee.employee_id}/status`
     );
 
     if (!response.ok) {
@@ -217,11 +270,13 @@ async function initOfficialDashboard() {
 
     currentBadge.textContent = myProfile.status;
     lastUpdatedEl.textContent = myProfile.lastUpdated;
+
     selectStatus.value = myProfile.status;
   }
 
   refreshView();
 
+  // Update availability
   statusForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -229,7 +284,7 @@ async function initOfficialDashboard() {
 
     try {
       const response = await fetch(
-        "http://localhost:5001/api/employees/EMP001/status",
+        `${API_BASE_URL}/employees/${loggedInEmployee.employee_id}/status`,
         {
           method: "PUT",
           headers: {
@@ -244,7 +299,9 @@ async function initOfficialDashboard() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to update status");
+        throw new Error(
+          data.message || "Failed to update status"
+        );
       }
 
       myProfile.status = data.availability;
@@ -252,7 +309,9 @@ async function initOfficialDashboard() {
 
       refreshView();
 
-      alert(`Status successfully updated to: ${data.availability}`);
+      alert(
+        `Status successfully updated to: ${data.availability}`
+      );
 
     } catch (error) {
       console.error("Error updating status:", error);

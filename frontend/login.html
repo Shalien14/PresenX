@@ -257,8 +257,8 @@
         <div class="form-group">
           <label class="form-label" for="login-role">Access Clearance</label>
           <select id="login-role" class="form-control">
-            <option value="admin">Higher Official / System Administrator</option>
             <option value="official">Office Official (Self-Service)</option>
+            <option value="admin">Higher Official / System Administrator</option>
           </select>
         </div>
 
@@ -269,8 +269,7 @@
             type="text" 
             id="login-id" 
             class="form-control" 
-            placeholder="e.g. ADM-4081 or name@gov.org" 
-            value="admin@smartpresence.gov"
+            placeholder="Enter Your Employee ID"
             required
           >
         </div>
@@ -283,7 +282,6 @@
             id="login-password" 
             class="form-control" 
             placeholder="Enter secure password" 
-            value="••••••••"
             required
           >
         </div>
@@ -309,26 +307,75 @@
   </footer>
 
   <script>
-    document.getElementById('admin-login-form').addEventListener('submit', function (e) {
+    document.getElementById("admin-login-form").addEventListener("submit", async function (e) {
       e.preventDefault();
-      
-      const role = document.getElementById('login-role').value;
-      const id = document.getElementById('login-id').value.trim();
-      const password = document.getElementById('login-password').value.trim();
-      const errorBox = document.getElementById('error-alert');
 
-      // Basic empty check
-      if (!id || !password) {
-        errorBox.textContent = 'Please enter both your Official ID and Password.';
-        errorBox.style.display = 'block';
+      const role = document.getElementById("login-role").value;
+      const employeeId = document.getElementById("login-id").value.trim();
+      const password = document.getElementById("login-password").value.trim();
+      const errorBox = document.getElementById("error-alert");
+
+      errorBox.style.display = "none";
+
+      // Basic validation
+      if (!employeeId || !password) {
+        errorBox.textContent = "Please enter both your Employee ID and Password.";
+        errorBox.style.display = "block";
         return;
       }
 
-      // Route according to the selected clearance tier
-      if (role === 'admin') {
-        window.location.href = 'official-dashboard.html';
-      } else {
-        window.location.href = 'official-dashboard.html';
+      // Admin login will be implemented later
+      if (role === "admin") {
+        errorBox.textContent = "Administrator login is not implemented yet.";
+        errorBox.style.display = "block";
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          "http://localhost:5001/api/employees"
+        );
+
+        if (!response.ok) {
+          throw new Error("Unable to connect to backend.");
+        }
+
+        const data = await response.json();
+
+        const employee = data.employees.find(
+          emp => emp.employee_id === employeeId
+        );
+
+        if (!employee) {
+          errorBox.textContent = "Employee ID not found.";
+          errorBox.style.display = "block";
+          return;
+        }
+
+        // Temporary development authentication
+        if (password !== "1234") {
+          errorBox.textContent = "Incorrect password.";
+          errorBox.style.display = "block";
+          return;
+        }
+
+        // Store logged-in employee
+        sessionStorage.setItem(
+          "loggedInEmployee",
+          JSON.stringify(employee)
+        );
+
+        // Go to official dashboard
+        window.location.href =
+          `official-dashboard.html?employee=${employee.employee_id}`;
+
+      } catch (error) {
+        console.error("Login error:", error);
+
+        errorBox.textContent =
+          "Unable to connect to PresenX server.";
+
+        errorBox.style.display = "block";
       }
     });
   </script>
