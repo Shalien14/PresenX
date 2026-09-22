@@ -1,0 +1,296 @@
+import os
+import cv2
+import numpy as np
+import pickle
+import csv
+from datetime import datetime, date
+from pathlib import Path
+from insightface.app import FaceAnalysis
+
+# ============================================================
+# PATHS (matched to your PresenX structure)
+# ============================================================
+
+BASE_DIR = Path(__file__).parent.resolve()          # PresenX/Recognition
+PROJECT_ROOT = BASE_DIR.parent                      # PresenX
+
+KNOWN_FACES_DIR = PROJECT_ROOT / "Known_faces"
+EMBEDDINGS_FILE = KNOWN_FACES_DIR / "embeddings.pkl"   # ← now lives inside Known_faces
+ATTENDANCE_DIR = PROJECT_ROOT / "Attendance"
+ATTENDANCE_CSV = ATTENDANCE_DIR / "attendance.csv"
+
+# Create folders if they don't exist
+ATTENDANCE_DIR.mkdir(parents=True, exist_ok=True)
+KNOWN_FACES_DIR.mkdir(parents=True, exist_ok=True)
+
+# ============================================================
+# CONFIG
+# ============================================================
+
+MATCH_THRESHOLD = 0.50
+DETECTION_THRESHOLD = 0.50
+PROCESS_EVERY_N_FRAMES = 3
+CONFIRMATION_FRAMES = 3          # must be seen this many times before marking
+CAMERA_WIDTH = 640
+CAMERA_HEIGHT = 480
+DET_SIZE = (320, 320)
+
+# ============================================================
+# INITIALIZATION
+# ============================================================
+
+print("Loading InsightFace model...")
+app = FaceAnalysis(name="buffalo_l", providers=["CPUExecutionProvider"])
+app.prepare(ctx_id=-1, det_size=DET_SIZE)
+print("Model loaded.")
+
+# ============================================================
+# HELPERS
+# ============================================================
+
+def normalize_embedding(embedding):
+    embedding = np.asarray(embedding, dtype=np.float32)
+    norm = np.linalg.norm(embedding)
+    return embedding if norm == 0 else embedding / norm
+
+
+def get_face_embedding(image):
+    faces = app.get(image)
+    if not faces:
+        return None
+    face = max(faces, key=lambda f: (f.bbox[2] - f.bbox[0]) * (f.bbox[3] - f.bbox[1]))
+    if face.det_score < DETECTION_THRESHOLD:
+        return None
+    return normalize_embedding(face.embedding)
+
+
+def load_or_build_database(force_rebuild=False):
+    """
+    Loads existing embeddings.pkl and automatically adds any new faces
+    found in Known_faces folder.
+    """
+    database = {}
+
+    # Load existing cache if available
+    if EMBEDDINGS_FILE.exists() and not force_rebuild:
+        print("Loading cached embeddings...")
+        with open(EMBEDDINGS_FILE, "rb") as f:
+            database = pickle.load(f)
+        print(f"Loaded {len(database)} people from cache.")
+
+    if not KNOWN_FACES_DIR.exists():
+        print(f"Known_faces folder not found at: {KNOWN_FACES_DIR}")
+        return database
+
+    # Check for new images that are not yet in the database
+    existing_names = set(database.keys())
+    new_faces_found = False
+
+    print("Scanning Known_faces for new people...")
+    for path in KNOWN_FACES_DIR.glob("*"):
+        if path.suffix.lower() not in {".jpg", ".jpeg", ".png"}:
+            continue
+
+        # Clean name from filename
+        name = path.stem.split("_")[0].replace("-", " ").strip().title()
+
+        if name in existing_names and not force_rebuild:
+            continue  # already have this person
+
+        image = cv2.imread(str(path))
+        if image is None:
+            print(f"  Could not read {path.name}")
+            continue
+
+        emb = get_face_embedding(image)
+        if emb is not None:
+            database.setdefault(name, []).append(emb)
+            print(f"  + Added/Updated: {name}")
+            new_faces_found = True
+        else:
+            print(f"  × No face detected in {path.name}")
+
+    if new_faces_found or force_rebuild:
+        with open(EMBEDDINGS_FILE, "wb") as f:
+            pickle.dump(database, f)
+        print(f"Saved updated embeddings → {EMBEDDINGS_FILE}")
+
+    return database
+
+
+def recognize_face(query_embedding, database):
+    best_name = "Unknown"
+    best_score = -1.0
+    query_embedding = normalize_embedding(query_embedding)
+
+    for name, refs in database.items():
+        scores = [float(np.dot(query_embedding, ref)) for ref in refs]
+        person_best = max(scores) if scores else -1.0
+        if person_best > best_score:
+            best_score = person_best
+            best_name = name
+
+    if best_score < MATCH_THRESHOLD:
+        best_name = "Unknown"
+    return best_name, best_score
+
+
+# ============================================================
+# ATTENDANCE (CSV version)
+# ============================================================
+
+def ensure_csv_header():
+    if not ATTENDANCE_CSV.exists():
+        with open(ATTENDANCE_CSV, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow(["Name", "Timestamp", "Similarity", "Date"])
+
+
+def is_already_marked_today(name: str) -> bool:
+    today = date.today().isoformat()
+    if not ATTENDANCE_CSV.exists():
+        return False
+
+    with open(ATTENDANCE_CSV, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if row.get("Name") == name and row.get("Date") == today:
+                return True
+    return False
+
+
+def mark_attendance(name: str, similarity: float) -> bool:
+    """Returns True if newly marked, False if already present today."""
+    if is_already_marked_today(name):
+        return False
+
+    ensure_csv_header()
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    today = date.today().isoformat()
+
+    with open(ATTENDANCE_CSV, "a", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow([name, now, f"{similarity:.4f}", today])
+
+    print(f"[ATTENDANCE] {name} marked present at {now} ({similarity:.1%})")
+    return True
+
+
+def get_today_attendance():
+    today = date.today().isoformat()
+    results = []
+    if not ATTENDANCE_CSV.exists():
+        return results
+
+    with open(ATTENDANCE_CSV, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if row.get("Date") == today:
+                results.append(row)
+    return results
+
+
+# ============================================================
+# MAIN LOOP
+# ============================================================
+
+def main():
+    # Set force_rebuild=True if you want to completely rebuild the database
+    known_database = load_or_build_database(force_rebuild=False)
+
+    if not known_database:
+        print("No known faces found. Add photos to Known_faces/ and restart.")
+        return
+
+    cap = cv2.VideoCapture(0)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA_WIDTH)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA_HEIGHT)
+
+    if not cap.isOpened():
+        print("Error: Could not open webcam.")
+        return
+
+    frame_count = 0
+    cached_faces = []
+    confirmation_counter = {}
+
+    print("\nPresenX Attendance Engine v4 started")
+    print(f"Known faces : {list(known_database.keys())}")
+    print("Press 'q' to quit | 'a' to show today's attendance\n")
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        frame_count += 1
+        display = frame.copy()
+
+        if frame_count % PROCESS_EVERY_N_FRAMES == 0:
+            cached_faces.clear()
+            small = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
+            faces = app.get(small)
+
+            current_names = set()
+
+            for face in faces:
+                if face.det_score < DETECTION_THRESHOLD:
+                    continue
+
+                bbox = (face.bbox * 2).astype(int)
+                emb = normalize_embedding(face.embedding)
+                name, similarity = recognize_face(emb, known_database)
+
+                cached_faces.append((bbox, name, similarity))
+                current_names.add(name)
+
+                if name != "Unknown":
+                    confirmation_counter[name] = confirmation_counter.get(name, 0) + 1
+                    if confirmation_counter[name] >= CONFIRMATION_FRAMES:
+                        mark_attendance(name, similarity)
+                        confirmation_counter[name] = 0
+
+            # Decay people who disappeared
+            for name in list(confirmation_counter.keys()):
+                if name not in current_names:
+                    confirmation_counter[name] = max(0, confirmation_counter[name] - 1)
+
+        # Draw
+        for bbox, name, similarity in cached_faces:
+            x1, y1, x2, y2 = bbox
+            color = (0, 255, 0) if name != "Unknown" else (0, 0, 255)
+            label = f"{name} ({int(similarity*100)}%)"
+
+            cv2.rectangle(display, (x1, y1), (x2, y2), color, 2)
+            (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
+            cv2.rectangle(display, (x1, y1 - th - 10), (x1 + tw + 8, y1), color, -1)
+            cv2.putText(display, label, (x1 + 4, y1 - 5),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+
+        # Status
+        today_count = len(get_today_attendance())
+        cv2.putText(display, f"Today: {today_count} present  |  Press 'a'",
+                    (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+
+        cv2.imshow("PresenX - Attendance Engine v4", display)
+
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord("q"):
+            break
+        elif key == ord("a"):
+            print("\n===== Today's Attendance =====")
+            rows = get_today_attendance()
+            if not rows:
+                print("  No one marked yet today.")
+            else:
+                for r in rows:
+                    print(f"  {r['Name']:<18} {r['Timestamp']}  ({float(r['Similarity']):.1%})")
+            print("==============================\n")
+
+    cap.release()
+    cv2.destroyAllWindows()
+    print("Shutdown complete.")
+
+
+if __name__ == "__main__":
+    main()
