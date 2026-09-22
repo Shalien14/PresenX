@@ -262,9 +262,22 @@ async function initOfficialDashboard() {
 
   } catch (error) {
     console.error("Error loading official status:", error);
+
+    currentBadge.className = "status-badge";
+    currentBadge.textContent = "STATUS UNAVAILABLE";
+    lastUpdatedEl.textContent = "Unable to load current status";
+
+    selectStatus.value = "";
   }
 
   function refreshView() {
+    if (!myProfile.status) {
+      currentBadge.className = "status-badge";
+      currentBadge.textContent = "LOADING...";
+      lastUpdatedEl.textContent = "Loading...";
+      return;
+    }
+
     currentBadge.className =
       `status-badge ${getStatusClass(myProfile.status)}`;
 
