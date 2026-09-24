@@ -15,7 +15,7 @@ app.get("/",(req,res)=>{
 })
 
 app.use("/api",attendenceRoute)
-app.use("/api", employeeRoutes);
+app.use("/api/employees", employeeRoutes);
 
 app.listen(5001,()=>{
     console.log("presenX is running on port 5001")

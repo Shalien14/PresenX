@@ -1,3 +1,5 @@
+//This is only for Development
+
 const db = require("./database/database");
 
 const addEmployee = db.prepare(`
