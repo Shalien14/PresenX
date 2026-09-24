@@ -23,7 +23,11 @@
   <main class="container">
     <div class="page-header">
       <h1>Official Availability Control</h1>
-      <p>Logged in as: <strong>Kamal</strong> (Manager)</p>
+      <p>
+        Logged in as:
+        <strong id="official-name">Loading...</strong>
+        (<span id="official-position">Loading...</span>)
+      </p>
     </div>
 
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
@@ -37,7 +41,8 @@
           Last updated: <span id="current-last-updated">Today at 10:15 AM</span>
         </p>
         <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">
-          Assigned Room: <strong>Room 402</strong>
+          Assigned Room:
+          <strong id="official-room">Loading...</strong>
         </p>
       </div>
 

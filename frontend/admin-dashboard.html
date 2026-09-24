@@ -45,7 +45,71 @@
         <div class="label">Absent</div>
       </div>
     </div>
+    
+    <!-- Add Employee -->
+    <div class="card-panel">
+      <h2 class="card-title">Add New Employee</h2>
 
+      <form id="add-employee-form">
+
+        <div class="form-group">
+          <label for="employee-id">Employee ID</label>
+          <input
+            type="text"
+            id="employee-id"
+            placeholder="EMP004"
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="employee-name">Name</label>
+          <input
+            type="text"
+            id="employee-name"
+            placeholder="Employee name"
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="employee-designation">Designation</label>
+          <input
+            type="text"
+            id="employee-designation"
+            placeholder="Officer"
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="employee-department">Department</label>
+          <input
+            type="text"
+            id="employee-department"
+            placeholder="Health Administration"
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="employee-room">Room</label>
+          <input
+            type="text"
+            id="employee-room"
+            placeholder="Room 402"
+            required
+          >
+        </div>
+
+        <button type="submit" class="btn-primary">
+          Add Employee
+        </button>
+
+        <p id="employee-message"></p>
+
+      </form>
+    </div>
     <!-- Complete Registry with Attendance info -->
     <div class="card-panel">
       <h2 class="card-title">Department Officials Log</h2>

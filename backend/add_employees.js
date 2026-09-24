@@ -1,8 +1,9 @@
+//This is only for Development
+
 const db = require("./database/database");
 
-// Add test employees
 const addEmployee = db.prepare(`
-    INSERT INTO employees
+    INSERT OR IGNORE INTO employees
     (employee_id, name, designation, department, room)
     VALUES (?, ?, ?, ?, ?)
 `);
@@ -31,4 +32,26 @@ addEmployee.run(
     "Room 110"
 );
 
-console.log("Employees added successfully.");
+
+const addStatus = db.prepare(`
+    INSERT OR IGNORE INTO official_status
+    (employee_id, presence, availability, updated_at)
+    VALUES (?, ?, ?, ?)
+`);
+
+const initialStatuses = [
+    "EMP001",
+    "EMP002",
+    "EMP003"
+];
+
+for (const employeeId of initialStatuses) {
+    addStatus.run(
+        employeeId,
+        "PRESENT",
+        "AVAILABLE",
+        new Date().toISOString()
+    );
+}
+
+console.log("Database seed completed.");

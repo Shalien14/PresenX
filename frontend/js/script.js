@@ -1,72 +1,10 @@
 const API_BASE_URL = "http://localhost:5001/api";
-// // Default initial data
-// const DEFAULT_OFFICIALS = [
-//   {
-//     id: 1,
-//     name: "Dr. Alistair Vance",
-//     position: "Chief Medical Officer",
-//     department: "Health Administration",
-//     room: "Room 402 - Wing B",
-//     status: "AVAILABLE",
-//     lastUpdated: "Today at 10:15 AM",
-//     attendance: "Present (Check-in 08:30 AM)"
-//   },
-//   {
-//     id: 2,
-//     name: "Sarah Jenkins, Esq.",
-//     position: "Legal Counsel",
-//     department: "Legal Affairs",
-//     room: "Room 205 - Main Hall",
-//     status: "ON OFFICIAL DUTY",
-//     lastUpdated: "Today at 09:40 AM",
-//     attendance: "Field Assignment"
-//   },
-//   {
-//     id: 3,
-//     name: "Marcus Thorne",
-//     position: "Senior Town Planner",
-//     department: "Urban Development",
-//     room: "Room 110 - Ground Floor",
-//     status: "TEMPORARILY UNAVAILABLE",
-//     lastUpdated: "Today at 11:05 AM",
-//     attendance: "Present (In Meeting)"
-//   },
-//   {
-//     id: 4,
-//     name: "Elena Rostova",
-//     position: "Director of Revenue",
-//     department: "Finance & Taxation",
-//     room: "Room 301 - Wing A",
-//     status: "ABSENT",
-//     lastUpdated: "Yesterday at 04:50 PM",
-//     attendance: "On Leave"
-//   }
-// ];
-
-// // Load from localStorage or initialize with defaults
-// function getOfficialsData() {
-//   const saved = localStorage.getItem("smart_presence_officials");
-//   if (!saved) {
-//     localStorage.setItem("smart_presence_officials", JSON.stringify(DEFAULT_OFFICIALS));
-//     return DEFAULT_OFFICIALS;
-//   }
-//   return JSON.parse(saved);
-// }
-
-// function saveOfficialsData(data) {
-//   localStorage.setItem("smart_presence_officials", JSON.stringify(data));
-// }
-
-
-/* ==========================================================
-   Smart Presence - Mock Data & Logic (Frontend Only)
-   ========================================================== */
 
 // Initial Static Data (Easily replaced with API data later)
 let officialsData = [];
 async function loadOfficials() {
   try {
-    const response = await fetch("http://localhost:5001/api/employees");
+    const response = await fetch(`${API_BASE_URL}/employees`);
 
     if (!response.ok) {
       throw new Error("Failed to fetch employees");
@@ -74,23 +12,63 @@ async function loadOfficials() {
 
     const data = await response.json();
 
+    // Get employee profiles
     officialsData = data.employees.map(employee => ({
       id: employee.employee_id,
       name: employee.name,
       position: employee.designation,
       department: employee.department,
       room: employee.room,
-      status: "ABSENT",
-      lastUpdated: "Not available",
+      status: null,
+      lastUpdated: null,
       attendance: "No attendance data"
     }));
+
+    // Load real status for every employee
+    await Promise.all(
+      officialsData.map(async official => {
+        try {
+          const statusResponse = await fetch(
+            `${API_BASE_URL}/employees/${official.id}/status`
+          );
+
+          if (!statusResponse.ok) {
+            throw new Error(
+              `Failed to fetch status for ${official.id}`
+            );
+          }
+
+          const statusData = await statusResponse.json();
+
+          if (statusData.success) {
+              const status = statusData.status;
+
+              if (status.presence === "ABSENT") {
+                  official.status = "ABSENT";
+              } else {
+                  official.status = status.availability;
+              }
+
+              official.lastUpdated = status.updated_at;
+          }
+
+        } catch (error) {
+          console.error(
+            `Error loading status for ${official.id}:`,
+            error
+          );
+        }
+      })
+    );
 
     renderPublicCards(officialsData);
 
   } catch (error) {
     console.error("Error loading officials:", error);
 
-    const container = document.getElementById("public-officials-grid");
+    const container = document.getElementById(
+      "public-officials-grid"
+    );
 
     if (container) {
       container.innerHTML = `
@@ -180,20 +158,40 @@ async function initOfficialDashboard() {
 
   if (!statusForm) return;
 
-  // Temporary logged-in official
+  // Get the employee who logged in
+  const storedEmployee = sessionStorage.getItem("loggedInEmployee");
+
+  if (!storedEmployee) {
+    console.error("No logged-in employee found.");
+    window.location.href = "login.html";
+    return;
+  }
+
+  const loggedInEmployee = JSON.parse(storedEmployee);
+
+  // Find that employee in the loaded employee list
   const myProfile = officialsData.find(
-    official => official.id === "EMP001"
+    official => official.id === loggedInEmployee.employee_id
   );
 
   if (!myProfile) {
-    console.error("EMP001 not found in officialsData");
+    console.error(
+      `Employee ${loggedInEmployee.employee_id} not found in officialsData`
+    );
     return;
   }
+  const officialName = document.getElementById("official-name");
+  const officialPosition = document.getElementById("official-position");
+  const officialRoom = document.getElementById("official-room");
+
+  officialName.textContent = myProfile.name;
+  officialPosition.textContent = myProfile.position;
+  officialRoom.textContent = myProfile.room;
 
   // Load current status from backend
   try {
     const response = await fetch(
-      "http://localhost:5001/api/employees/EMP001/status"
+      `${API_BASE_URL}/employees/${loggedInEmployee.employee_id}/status`
     );
 
     if (!response.ok) {
@@ -209,19 +207,34 @@ async function initOfficialDashboard() {
 
   } catch (error) {
     console.error("Error loading official status:", error);
+
+    currentBadge.className = "status-badge";
+    currentBadge.textContent = "STATUS UNAVAILABLE";
+    lastUpdatedEl.textContent = "Unable to load current status";
+
+    selectStatus.value = "";
   }
 
   function refreshView() {
+    if (!myProfile.status) {
+      currentBadge.className = "status-badge";
+      currentBadge.textContent = "LOADING...";
+      lastUpdatedEl.textContent = "Loading...";
+      return;
+    }
+
     currentBadge.className =
       `status-badge ${getStatusClass(myProfile.status)}`;
 
     currentBadge.textContent = myProfile.status;
     lastUpdatedEl.textContent = myProfile.lastUpdated;
+
     selectStatus.value = myProfile.status;
   }
 
   refreshView();
 
+  // Update availability
   statusForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -229,7 +242,7 @@ async function initOfficialDashboard() {
 
     try {
       const response = await fetch(
-        "http://localhost:5001/api/employees/EMP001/status",
+        `${API_BASE_URL}/employees/${loggedInEmployee.employee_id}/status`,
         {
           method: "PUT",
           headers: {
@@ -244,7 +257,9 @@ async function initOfficialDashboard() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to update status");
+        throw new Error(
+          data.message || "Failed to update status"
+        );
       }
 
       myProfile.status = data.availability;
@@ -252,7 +267,9 @@ async function initOfficialDashboard() {
 
       refreshView();
 
-      alert(`Status successfully updated to: ${data.availability}`);
+      alert(
+        `Status successfully updated to: ${data.availability}`
+      );
 
     } catch (error) {
       console.error("Error updating status:", error);
@@ -322,3 +339,55 @@ document.addEventListener("DOMContentLoaded", async () => {
   initAdminDashboard();
   initLogin();
 });
+
+//Add_Employee
+const employeeForm = document.getElementById("add-employee-form");
+
+if (employeeForm) {
+
+    employeeForm.addEventListener("submit", async (event) => {
+
+        event.preventDefault();
+
+        const employeeData = {
+            employee_id: document.getElementById("employee-id").value.trim(),
+            name: document.getElementById("employee-name").value.trim(),
+            designation: document.getElementById("employee-designation").value.trim(),
+            department: document.getElementById("employee-department").value.trim(),
+            room: document.getElementById("employee-room").value.trim()
+        };
+
+        const message = document.getElementById("employee-message");
+
+        try {
+
+            const response = await fetch(
+                `${API_BASE_URL}/employees`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(employeeData)
+                }
+            );
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || "Failed to add employee");
+            }
+
+            message.textContent = "Employee added successfully!";
+            message.style.color = "green";
+            employeeForm.reset();
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            message.textContent = error.message;
+        }
+    });
+}
