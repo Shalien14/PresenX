@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import pickle
 import csv
+import platform
 from datetime import datetime, date
 from pathlib import Path
 from insightface.app import FaceAnalysis
@@ -201,14 +202,33 @@ def main():
     if not known_database:
         print("No known faces found. Add photos to Known_faces/ and restart.")
         return
+    # This identify the platform and support camera in both platform
+    if platform.system() == "Darwin":  # macOS
+        cap = cv2.VideoCapture(0, cv2.CAP_AVFOUNDATION)
+    else:  # Windows / Linux
+        cap = cv2.VideoCapture(0)
 
-    cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        print("ERROR: Could not open webcam.")
+        return
+
+    print("Webcam opened successfully.")
+
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA_WIDTH)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA_HEIGHT)
 
-    if not cap.isOpened():
-        print("Error: Could not open webcam.")
+    # Warm up the camera in mac os first run doesnt work.
+    for _ in range(5):
+        ret, frame = cap.read()
+        if ret:
+            break
+
+    if not ret:
+        print("ERROR: Webcam opened but failed to read frame.")
+        cap.release()
         return
+
+    print("First frame captured successfully.")
 
     frame_count = 0
     cached_faces = []
@@ -221,6 +241,7 @@ def main():
     while True:
         ret, frame = cap.read()
         if not ret:
+            print("ERROR: Failed to read frame from webcam.")
             break
 
         frame_count += 1
