@@ -10,7 +10,7 @@
   --text-main: #0f172a;
   --text-muted: #64748b;
   --border: #e2e8f0;
-  
+
   /* Status Colors */
   --status-available: #16a34a;
   --status-available-bg: #dcfce7;
@@ -42,7 +42,7 @@ body {
   flex-direction: column;
 }
 
-/* Navbar */
+/* Navigation bar */
 .navbar {
   background-color: var(--bg-card);
   border-bottom: 1px solid var(--border);
@@ -88,7 +88,8 @@ body {
   transition: var(--transition);
 }
 
-.nav-link:hover, .nav-link.active {
+.nav-link:hover,
+.nav-link.active {
   color: var(--primary);
   background-color: var(--primary-light);
 }
@@ -151,25 +152,37 @@ body {
   background-color: var(--status-available-bg);
   color: var(--status-available);
 }
-.status-available::before { background-color: var(--status-available); }
+
+.status-available::before {
+  background-color: var(--status-available);
+}
 
 .status-absent {
   background-color: var(--status-absent-bg);
   color: var(--status-absent);
 }
-.status-absent::before { background-color: var(--status-absent); }
+
+.status-absent::before {
+  background-color: var(--status-absent);
+}
 
 .status-temporarily-unavailable {
   background-color: var(--status-temp-bg);
   color: var(--status-temp);
 }
-.status-temporarily-unavailable::before { background-color: var(--status-temp); }
+
+.status-temporarily-unavailable::before {
+  background-color: var(--status-temp);
+}
 
 .status-on-official-duty {
   background-color: var(--status-duty-bg);
   color: var(--status-duty);
 }
-.status-on-official-duty::before { background-color: var(--status-duty); }
+
+.status-on-official-duty::before {
+  background-color: var(--status-duty);
+}
 
 /* Public Filter / Search Bar */
 .search-filter-bar {
@@ -340,7 +353,8 @@ body {
   font-size: 0.9rem;
 }
 
-.data-table th, .data-table td {
+.data-table th,
+.data-table td {
   padding: 0.85rem 1rem;
   border-bottom: 1px solid var(--border);
 }
@@ -385,8 +399,229 @@ footer {
   .search-filter-bar {
     grid-template-columns: 1fr;
   }
+
   .navbar {
     flex-direction: column;
     gap: 1rem;
   }
+}
+
+/*from home page*/
+
+/* Hero Landing Page Specific Styles */
+.hero-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #0b1329;
+  padding: 1.5rem;
+
+}
+
+.hero-card {
+  width: 100%;
+  max-width: 1000px;
+  /* Dark navy gradient matching the design */
+  background: radial-gradient(circle at 80% 20%, #152e4d 0%, #0c1a2e 50%, #08111e 100%);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+  padding: 5rem 2.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Live Active Pill Badge */
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: rgba(30, 58, 82, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.9rem;
+  border-radius: 9999px;
+  margin-bottom: 2rem;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  background-color: #22c55e;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #22c55e;
+}
+
+/* Heading & Description */
+.hero-title {
+  font-size: clamp(2.2rem, 4.5vw, 3.75rem);
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.25rem;
+  max-width: 800px;
+}
+
+.hero-desc {
+  color: #94a3b8;
+  font-size: clamp(1rem, 1.5vw, 1.15rem);
+  line-height: 1.6;
+  max-width: 600px;
+  margin-bottom: 2.75rem;
+}
+
+/* CTA Buttons Group */
+.hero-btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 3.5rem;
+}
+
+.btn-cta-primary {
+  background-color: #ffffff;
+  color: #0f172a;
+  padding: 0.85rem 1.6rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.btn-cta-primary:hover {
+  background-color: #f1f5f9;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.btn-cta-secondary {
+  background-color: #2a3c4f;
+  color: #ffffff;
+  padding: 0.85rem 1.6rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+}
+
+.btn-cta-secondary:hover {
+  background-color: #364d66;
+  transform: translateY(-2px);
+}
+
+/* Footer Tagline */
+.hero-footer-text {
+  color: #64748b;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 640px) {
+  .hero-card {
+    padding: 3rem 1.5rem;
+  }
+
+  .hero-btn-group {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .btn-cta-primary,
+  .btn-cta-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+
+
+/* Custom Dropdown Container */
+.custom-dropdown {
+  position: relative;
+  display: inline-block;
+  min-width: 260px;
+}
+
+/* Dropdown Trigger Button */
+.dropdown-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background-color: #2a3c4f;
+  color: #ffffff;
+  padding: 0.85rem 1.4rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dropdown-trigger:hover {
+  background-color: #364d66;
+}
+
+/* Floating Menu (Solid Dark, Zero White Edges) */
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 100%;
+  background-color: #16263d;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  z-index: 999;
+}
+
+.dropdown-menu.show {
+  display: block;
+}
+
+/* Dropdown Items */
+.dropdown-item {
+  padding: 0.8rem 1.25rem;
+  color: #e2e8f0;
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.dropdown-item:hover {
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+/* Disabled State for Availability Button */
+.btn-cta-primary:disabled {
+  background-color: #64748b;
+  color: #334155;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+  opacity: 0.55;
 }
