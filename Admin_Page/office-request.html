@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Office Request Details</title>
+
+    <link rel="stylesheet"
+          href="office-request.css">
+
+</head>
+
+
+<body>
+
+
+    <!-- Header -->
+
+    <header class="header">
+
+        <button class="back-button"
+                onclick="goBack()">
+
+            ← Back
+
+        </button>
+
+        <h1>Office Request Details</h1>
+
+    </header>
+
+
+    <!-- Main Content -->
+
+    <main class="details-container">
+
+
+        <!-- Office Information -->
+
+        <section class="office-card">
+
+            <h2>Office Information</h2>
+
+
+            <div class="detail-row">
+
+                <span class="label">
+                    Office Name
+                </span>
+
+                <span id="officeName">
+                    ABC Engineering Pvt Ltd
+                </span>
+
+            </div>
+
+
+            <div class="detail-row">
+
+                <span class="label">
+                    Office Type
+                </span>
+
+                <span id="officeType">
+                    Engineering Company
+                </span>
+
+            </div>
+
+
+            <div class="detail-row">
+
+                <span class="label">
+                    Registration Number
+                </span>
+
+                <span id="registrationNumber">
+                    REG-2026-001
+                </span>
+
+            </div>
+
+
+            <div class="detail-row">
+
+                <span class="label">
+                    Address
+                </span>
+
+                <span id="officeAddress">
+                    123 Main Street, Colombo
+                </span>
+
+            </div>
+
+
+            <div class="detail-row">
+
+                <span class="label">
+                    Email
+                </span>
+
+                <span id="officeEmail">
+                    contact@abcengineering.com
+                </span>
+
+            </div>
+
+
+            <div class="detail-row">
+
+                <span class="label">
+                    Phone
+                </span>
+
+                <span id="officePhone">
+                    +94 77 123 4567
+                </span>
+
+            </div>
+
+
+            <div class="detail-row">
+
+                <span class="label">
+                    Website
+                </span>
+
+                <span id="officeWebsite">
+                    www.abcengineering.com
+                </span>
+
+            </div>
+
+
+            <div class="detail-row">
+
+                <span class="label">
+                    Description
+                </span>
+
+                <span id="officeDescription">
+                    ABC Engineering provides engineering
+                    consultancy and technical services.
+                </span>
+
+            </div>
+
+
+        </section>
+
+
+        <!-- Uploaded Documents -->
+
+        <section class="office-card">
+
+            <h2>Submitted Documents</h2>
+
+            <div class="document">
+
+                📄 Business Registration Certificate
+
+                <button onclick="viewDocument()">
+                    View
+                </button>
+
+            </div>
+
+
+            <div class="document">
+
+                📄 Company Verification Document
+
+                <button onclick="viewDocument()">
+                    View
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- Action Buttons -->
+
+        <section class="actions">
+
+            <button class="accept-button"
+                    onclick="acceptRequest()">
+
+                ✓ Accept
+
+            </button>
+
+
+            <button class="reject-button"
+                    onclick="showRejectBox()">
+
+                ✕ Reject
+
+            </button>
+
+        </section>
+
+
+    </main>
+
+
+    <!-- Reject Message Box -->
+
+    <div id="rejectModal"
+         class="modal">
+
+        <div class="modal-content">
+
+            <h2>Reject Office Request</h2>
+
+            <p>
+                Please provide a reason for rejecting
+                this office request.
+            </p>
+
+
+            <textarea id="rejectReason"
+                      placeholder="Enter rejection reason...">
+            </textarea>
+
+
+            <div class="modal-buttons">
+
+                <button class="cancel-button"
+                        onclick="closeRejectBox()">
+
+                    Cancel
+
+                </button>
+
+
+                <button class="confirm-reject-button"
+                        onclick="rejectRequest()">
+
+                    Reject Request
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <script src="office-request.js"></script>
+
+</body>
+
+</html>
