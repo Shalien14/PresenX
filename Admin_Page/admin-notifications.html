@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin Notifications</title>
+
+    <link rel="stylesheet" href="admin-notifications.css">
+</head>
+
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <h1>Admin Notifications</h1>
+
+        <div class="notification-count">
+            <span id="notificationCount">3</span>
+            New Requests
+        </div>
+    </header>
+
+
+    <!-- Main Content -->
+    <main class="notification-container">
+
+        <h2>Office Addition Requests</h2>
+
+        <!-- Notification 1 -->
+        <div class="notification-card"
+             onclick="openRequest(1)">
+
+            <div class="notification-icon">
+                🏢
+            </div>
+
+            <div class="notification-content">
+
+                <h3>New Office Request</h3>
+
+                <p>
+                    <strong>ABC Engineering Pvt Ltd</strong>
+                    has requested to add their office to the website.
+                </p>
+
+                <span class="request-time">
+                    10 minutes ago
+                </span>
+
+            </div>
+
+            <div class="arrow">
+                →
+            </div>
+
+        </div>
+
+
+        <!-- Notification 2 -->
+        <div class="notification-card"
+             onclick="openRequest(2)">
+
+            <div class="notification-icon">
+                🏢
+            </div>
+
+            <div class="notification-content">
+
+                <h3>New Office Request</h3>
+
+                <p>
+                    <strong>Tech Solutions Lanka</strong>
+                    has requested to add their office to the website.
+                </p>
+
+                <span class="request-time">
+                    1 hour ago
+                </span>
+
+            </div>
+
+            <div class="arrow">
+                →
+            </div>
+
+        </div>
+
+
+        <!-- Notification 3 -->
+        <div class="notification-card"
+             onclick="openRequest(3)">
+
+            <div class="notification-icon">
+                🏢
+            </div>
+
+            <div class="notification-content">
+
+                <h3>New Office Request</h3>
+
+                <p>
+                    <strong>Global IT Solutions</strong>
+                    has requested to add their office to the website.
+                </p>
+
+                <span class="request-time">
+                    3 hours ago
+                </span>
+
+            </div>
+
+            <div class="arrow">
+                →
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <script src="admin-notifications.js"></script>
+
+</body>
+
+</html>
