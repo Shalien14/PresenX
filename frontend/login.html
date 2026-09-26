@@ -257,8 +257,8 @@
         <div class="form-group">
           <label class="form-label" for="login-role">Access Clearance</label>
           <select id="login-role" class="form-control">
-            <option value="official">Office Official (Self-Service)</option>
-            <option value="admin">Higher Official / System Administrator</option>
+            <option value="official">Office Official </option>
+            <option value="admin">Manager</option>
           </select>
         </div>
 
@@ -324,11 +324,32 @@
         return;
       }
 
-      // Admin login will be implemented later
+      // Admin login 
       if (role === "admin") {
-        errorBox.textContent = "Administrator login is not implemented yet.";
-        errorBox.style.display = "block";
-        return;
+
+          // Temporary development admin credentials
+          const ADMIN_USERNAME = "manager";
+          const ADMIN_PASSWORD = "manager123";
+
+          if (employeeId !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
+              errorBox.textContent = "Invalid administrator credentials.";
+              errorBox.style.display = "block";
+              return;
+          }
+
+          // Store admin session
+          sessionStorage.setItem(
+              "loggedInAdmin",
+              JSON.stringify({
+                  username: ADMIN_USERNAME,
+                  role: "admin"
+              })
+          );
+
+          // Go to admin dashboard
+          window.location.href = "admin-dashboard.html";
+
+          return;
       }
 
       try {
