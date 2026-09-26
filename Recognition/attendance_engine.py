@@ -2,11 +2,13 @@ import os
 import cv2
 import numpy as np
 import pickle
-import csv
 import platform
+import requests
 from datetime import datetime, date
 from pathlib import Path
 from insightface.app import FaceAnalysis
+
+API_BASE_URL = "http://localhost:5001/api"
 
 # ============================================================
 # PATHS (matched to your PresenX structure)
@@ -17,11 +19,8 @@ PROJECT_ROOT = BASE_DIR.parent                      # PresenX
 
 KNOWN_FACES_DIR = PROJECT_ROOT / "Known_faces"
 EMBEDDINGS_FILE = KNOWN_FACES_DIR / "embeddings.pkl"   # ← now lives inside Known_faces
-ATTENDANCE_DIR = PROJECT_ROOT / "Attendance"
-ATTENDANCE_CSV = ATTENDANCE_DIR / "attendance.csv"
 
 # Create folders if they don't exist
-ATTENDANCE_DIR.mkdir(parents=True, exist_ok=True)
 KNOWN_FACES_DIR.mkdir(parents=True, exist_ok=True)
 
 # ============================================================
@@ -137,59 +136,147 @@ def recognize_face(query_embedding, database):
 
 
 # ============================================================
-# ATTENDANCE (CSV version)
+# ATTENDANCE
 # ============================================================
 
-def ensure_csv_header():
-    if not ATTENDANCE_CSV.exists():
-        with open(ATTENDANCE_CSV, "w", newline="", encoding="utf-8") as f:
-            writer = csv.writer(f)
-            writer.writerow(["Name", "Timestamp", "Similarity", "Date"])
 
+def mark_attendance(
+    name: str,
+    similarity: float,
+    employee_mapping: dict
+) -> bool:
 
-def is_already_marked_today(name: str) -> bool:
-    today = date.today().isoformat()
-    if not ATTENDANCE_CSV.exists():
+    employee_id = employee_mapping.get(name)
+
+    if not employee_id:
+        print(
+            f"[WARNING] No employee found for recognized person: {name}"
+        )
         return False
 
-    with open(ATTENDANCE_CSV, "r", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            if row.get("Name") == name and row.get("Date") == today:
-                return True
-    return False
+    success = send_attendance(employee_id, "ENTRY")
 
-
-def mark_attendance(name: str, similarity: float) -> bool:
-    """Returns True if newly marked, False if already present today."""
-    if is_already_marked_today(name):
+    if not success:
+        print(
+            f"[ERROR] Failed to record attendance for "
+            f"{name} ({employee_id})"
+        )
         return False
 
-    ensure_csv_header()
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    today = date.today().isoformat()
 
-    with open(ATTENDANCE_CSV, "a", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow([name, now, f"{similarity:.4f}", today])
+    print(
+        f"[ATTENDANCE] {name} ({employee_id}) "
+        f"marked present at {now} ({similarity:.1%})"
+    )
 
-    print(f"[ATTENDANCE] {name} marked present at {now} ({similarity:.1%})")
     return True
-
 
 def get_today_attendance():
     today = date.today().isoformat()
-    results = []
-    if not ATTENDANCE_CSV.exists():
-        return results
 
-    with open(ATTENDANCE_CSV, "r", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            if row.get("Date") == today:
-                results.append(row)
-    return results
+    try:
+        response = requests.get(
+            f"{API_BASE_URL}/attendance",
+            params={"date": today},
+            timeout=5
+        )
 
+        if response.status_code != 200:
+            print(
+                f"[BACKEND ERROR] "
+                f"{response.status_code}: {response.text}"
+            )
+            return []
+
+        data = response.json()
+
+        return data.get("attendance", [])
+
+    except requests.RequestException as e:
+        print(
+            f"[BACKEND ERROR] Could not get attendance: {e}"
+        )
+        return []
+
+# ============================================================
+# LOAD EMPLOYEE MAPPING FROM PRESENX
+# ============================================================
+
+def load_employee_mapping():
+    try:
+        response = requests.get(
+            f"{API_BASE_URL}/employees",
+            timeout=5
+        )
+
+        response.raise_for_status()
+
+        data = response.json()
+
+        employees = data.get("employees", [])
+
+        mapping = {}
+
+        for employee in employees:
+            name = employee["name"]
+            employee_id = employee["employee_id"]
+
+            mapping[name] = employee_id
+
+        print("Employee mapping loaded:")
+        for name, employee_id in mapping.items():
+            print(f"  {name} -> {employee_id}")
+
+        return mapping
+
+    except requests.RequestException as e:
+        print(f"ERROR: Could not connect to PresenX backend: {e}")
+        return {}
+
+# ============================================================
+# SEND ATTENDANCE TO YOUR BACKEND
+# ============================================================
+
+def send_attendance(employee_id, status="ENTRY"):
+    now = datetime.now()
+
+    payload = {
+        "employeeId": employee_id,
+        "status": status,
+        "date": now.strftime("%Y-%m-%d"),
+        "time": now.strftime("%H:%M:%S")
+    }
+
+    try:
+        response = requests.post(
+            f"{API_BASE_URL}/attendance",
+            json=payload,
+            timeout=5
+        )
+
+        if response.status_code in (200, 201):
+            data = response.json()
+
+            print(
+                f"[BACKEND] {data.get('message')} "
+                f"| {employee_id} | {status}"
+            )
+
+            return True
+
+        print(
+            f"[BACKEND ERROR] "
+            f"{response.status_code}: {response.text}"
+        )
+
+        return False
+
+    except requests.RequestException as e:
+        print(
+            f"[BACKEND ERROR] Could not send attendance: {e}"
+        )
+        return False
 
 # ============================================================
 # MAIN LOOP
@@ -198,6 +285,11 @@ def get_today_attendance():
 def main():
     # Set force_rebuild=True if you want to completely rebuild the database
     known_database = load_or_build_database(force_rebuild=False)
+    employee_mapping = load_employee_mapping()
+
+    if not employee_mapping:
+        print("Could not load employee mapping from PresenX backend.")
+        return
 
     if not known_database:
         print("No known faces found. Add photos to Known_faces/ and restart.")
@@ -238,6 +330,10 @@ def main():
     print(f"Known faces : {list(known_database.keys())}")
     print("Press 'q' to quit | 'a' to show today's attendance\n")
 
+    attendance_recorded = set()
+    attendance_count = 0
+    last_attendance_refresh = 0
+
     while True:
         ret, frame = cap.read()
         if not ret:
@@ -267,8 +363,18 @@ def main():
 
                 if name != "Unknown":
                     confirmation_counter[name] = confirmation_counter.get(name, 0) + 1
+                    # if confirmation_counter[name] >= CONFIRMATION_FRAMES:
+                    #     mark_attendance(name, similarity)
+                    #     confirmation_counter[name] = 0
                     if confirmation_counter[name] >= CONFIRMATION_FRAMES:
-                        mark_attendance(name, similarity)
+
+                        if name not in attendance_recorded:
+                            success = mark_attendance(name,similarity,employee_mapping)
+
+                            if success:
+                                attendance_recorded.add(name)
+                                attendance_count = len(get_today_attendance())
+
                         confirmation_counter[name] = 0
 
             # Decay people who disappeared
@@ -289,8 +395,13 @@ def main():
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
         # Status
-        today_count = len(get_today_attendance())
-        cv2.putText(display, f"Today: {today_count} present  |  Press 'a'",
+        current_time = datetime.now().timestamp()
+
+        if current_time - last_attendance_refresh >= 5:
+            attendance_count = len(get_today_attendance())
+            last_attendance_refresh = current_time
+            
+        cv2.putText(display, f"Today: {attendance_count} present  |  Press 'a'",
                     (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
 
         cv2.imshow("PresenX - Attendance Engine v4", display)
@@ -305,7 +416,11 @@ def main():
                 print("  No one marked yet today.")
             else:
                 for r in rows:
-                    print(f"  {r['Name']:<18} {r['Timestamp']}  ({float(r['Similarity']):.1%})")
+                    print(
+                        f"  {r['name']:<18} "
+                        f"{r['date']} {r['time']}  "
+                        f"{r['status']}"
+                    )
             print("==============================\n")
 
     cap.release()
