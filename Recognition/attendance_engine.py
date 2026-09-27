@@ -35,7 +35,7 @@ CONFIRMATION_FRAMES = 3          # must be seen this many times before marking
 CAMERA_WIDTH = 640
 CAMERA_HEIGHT = 480
 DET_SIZE = (320, 320)
-CAMERA_TIMEOUT=1*60 
+CAMERA_TIMEOUT=5*60 
 
 # ============================================================
 # INITIALIZATION
