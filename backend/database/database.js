@@ -1,5 +1,6 @@
 const Database=require("better-sqlite3")
-const db=new Database("database/presenx.db")
+const path = require("path")
+const db=new Database(path.join(__dirname, "presenx.db"))
 
 ////
 console.log("database connected successfully")
@@ -45,6 +46,13 @@ db.prepare(`
         updated_at TEXT NOT NULL,
         FOREIGN KEY (employee_id) REFERENCES employees(employee_id)
     )
+`).run();
+
+db.prepare(`
+    INSERT OR IGNORE INTO official_status
+    (employee_id, presence, availability, updated_at)
+    SELECT employee_id, 'ABSENT', 'AVAILABLE', datetime('now')
+    FROM employees
 `).run();
 
 console.log("Database tables are ready")

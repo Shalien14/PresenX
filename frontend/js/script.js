@@ -19,8 +19,8 @@ async function loadOfficials() {
       position: employee.designation,
       department: employee.department,
       room: employee.room,
-      status: null,
-      lastUpdated: null,
+      status: employee.availability || "ABSENT",
+      lastUpdated: employee.updated_at || "Not available",
       attendance: "No attendance data"
     }));
 
