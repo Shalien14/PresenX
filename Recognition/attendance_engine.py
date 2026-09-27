@@ -4,6 +4,7 @@ import numpy as np
 import pickle
 import platform
 import requests
+import time
 from datetime import datetime, date
 from pathlib import Path
 from insightface.app import FaceAnalysis
@@ -34,6 +35,7 @@ CONFIRMATION_FRAMES = 3          # must be seen this many times before marking
 CAMERA_WIDTH = 640
 CAMERA_HEIGHT = 480
 DET_SIZE = (320, 320)
+CAMERA_TIMEOUT=1*60 
 
 # ============================================================
 # INITIALIZATION
@@ -306,6 +308,8 @@ def main():
 
     print("Webcam opened successfully.")
 
+    camera_start_time=time.time()
+
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA_WIDTH)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA_HEIGHT)
 
@@ -335,6 +339,13 @@ def main():
     last_attendance_refresh = 0
 
     while True:
+
+        # Check whether 5 minutes have passed
+        if time.time() - camera_start_time >= CAMERA_TIMEOUT:
+            print("5-minute camera timeout reached.")
+            print("Stopping attendance camera...")
+            break
+
         ret, frame = cap.read()
         if not ret:
             print("ERROR: Failed to read frame from webcam.")
@@ -407,9 +418,9 @@ def main():
         cv2.imshow("PresenX - Attendance Engine v4", display)
 
         key = cv2.waitKey(1) & 0xFF
-        if key == ord("q"):
-            break
-        elif key == ord("a"):
+        #if key == ord("q"):
+            #break
+        if key == ord("a"):
             print("\n===== Today's Attendance =====")
             rows = get_today_attendance()
             if not rows:
