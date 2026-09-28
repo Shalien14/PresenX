@@ -1,0 +1,198 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PresenX | Register Office</title>
+    <link rel="stylesheet" href="office.css">
+
+</head>
+<body>
+
+
+    <nav class="login-nav">
+        <a href="home.html" class="nav-brand">
+            <svg viewBox="0 0 24 24">
+                <path
+                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" />
+            </svg>
+            PresenX
+        </a>
+        <a href="home.html" class="btn-back">
+            &larr; Back
+        </a>
+    </nav>
+
+
+  <main class="page-container">
+    <div class="form-card">
+      
+      <div class="form-header">
+        <span class="pill-badge">ORGANIZATION ONBOARDING</span>
+        <h2>Office Registration</h2>
+        <p>Register a department or public authority to integrate smart presence telemetry.</p>
+      </div>
+
+      <!-- Feedback / Error Banner -->
+      <div id="error-banner" class="alert-box error hidden"></div>
+      <div id="success-banner" class="alert-box success hidden"></div>
+
+      <form id="office-form" novalidate>
+        <div class="form-grid">
+          
+          <!-- Office Name -->
+          <div class="form-group">
+            <label class="form-label" for="office-name">Office Name</label>
+            <input type="text" id="office-name" class="form-control" placeholder="e.g., Divisional Secretariat" required />
+            <span class="field-error" id="err-office-name"></span>
+          </div>
+
+          <!-- Office Type -->
+          <div class="form-group">
+            <label class="form-label" for="office-type">Office Type</label>
+            <input type="text" id="office-type" class="form-control" placeholder="e.g., Government Authority, Ministry" required />
+            <span class="field-error" id="err-office-type"></span>
+          </div>
+
+          <!-- Registration Number -->
+          <div class="form-group">
+            <label class="form-label" for="reg-no">Registration Number</label>
+            <input type="text" id="reg-no" class="form-control" placeholder="e.g., REG-2026-001" required />
+            <span class="field-error" id="err-reg-no"></span>
+          </div>
+
+          <!-- Address -->
+          <div class="form-group">
+            <label class="form-label" for="address">Address</label>
+            <input type="text" id="address" class="form-control" placeholder="e.g., 123 Main Street, Colombo" required />
+            <span class="field-error" id="err-address"></span>
+          </div>
+
+          <!-- Email -->
+          <div class="form-group">
+            <label class="form-label" for="email">Official Email</label>
+            <input type="email" id="email" class="form-control" placeholder="e.g., contact@department.gov" required />
+            <span class="field-error" id="err-email"></span>
+          </div>
+
+          <!-- Phone -->
+          <div class="form-group">
+            <label class="form-label" for="phone">Contact Phone</label>
+            <input type="tel" id="phone" class="form-control" placeholder="e.g., +94 77 123 4567" required />
+            <span class="field-error" id="err-phone"></span>
+          </div>
+
+          <!-- Website -->
+          <div class="form-group full-span">
+            <label class="form-label" for="website">Official Website / Domain</label>
+            <input type="url" id="website" class="form-control" placeholder="e.g., https://www.department.gov" />
+            <span class="field-error" id="err-website"></span>
+          </div>
+
+          <!-- Description -->
+          <div class="form-group full-span">
+            <label class="form-label" for="description">Description & Services</label>
+            <textarea id="description" class="form-control textarea" rows="3" placeholder="Brief outline of services and department functions..."></textarea>
+            <span class="field-error" id="err-description"></span>
+          </div>
+
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" onclick="window.history.back()">Cancel</button>
+          <button type="submit" class="btn-primary">Register Office</button>
+        </div>
+      </form>
+
+    </div>
+  </main>
+
+  <footer class="footer-note">
+    PresenX Automated Presence Platform &bull; IoT Telemetry & Vision AI
+  </footer>
+
+  <script>
+    const form = document.getElementById("office-form");
+    const errorBanner = document.getElementById("error-banner");
+    const successBanner = document.getElementById("success-banner");
+
+    function setError(inputId, errId, message) {
+      const input = document.getElementById(inputId);
+      const errSpan = document.getElementById(errId);
+      input.classList.add("input-invalid");
+      errSpan.textContent = message;
+    }
+
+    function clearErrors() {
+      document.querySelectorAll(".form-control").forEach(el => el.classList.remove("input-invalid"));
+      document.querySelectorAll(".field-error").forEach(el => el.textContent = "");
+      errorBanner.classList.add("hidden");
+      successBanner.classList.add("hidden");
+    }
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      clearErrors();
+
+      let hasError = false;
+
+      // Extract values
+      const name = document.getElementById("office-name").value.trim();
+      const type = document.getElementById("office-type").value.trim();
+      const regNo = document.getElementById("reg-no").value.trim();
+      const address = document.getElementById("address").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+      const website = document.getElementById("website").value.trim();
+
+      // Required field checks
+      if (!name) { setError("office-name", "err-office-name", "Office name is required."); hasError = true; }
+      if (!type) { setError("office-type", "err-office-type", "Office type is required."); hasError = true; }
+      if (!regNo) { setError("reg-no", "err-reg-no", "Registration number is required."); hasError = true; }
+      if (!address) { setError("address", "err-address", "Address is required."); hasError = true; }
+
+      // Email Regex Validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!email) {
+        setError("email", "err-email", "Email is required.");
+        hasError = true;
+      } else if (!emailRegex.test(email)) {
+        setError("email", "err-email", "Enter a valid email address.");
+        hasError = true;
+      }
+
+      // Phone Number Validation (digits, optional +, space, hyphen)
+      const phoneRegex = /^(\+?\d{1,4}[- ]?)?\d{7,12}$/;
+      if (!phone) {
+        setError("phone", "err-phone", "Phone number is required.");
+        hasError = true;
+      } else if (!phoneRegex.test(phone.replace(/\s+/g, ''))) {
+        setError("phone", "err-phone", "Enter a valid phone number (e.g. +94 77 123 4567).");
+        hasError = true;
+      }
+
+      // Website Validation (optional, but if present must be URL)
+      if (website) {
+        const urlPattern = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
+        if (!urlPattern.test(website)) {
+          setError("website", "err-website", "Enter a valid URL (e.g. https://domain.com).");
+          hasError = true;
+        }
+      }
+
+      if (hasError) {
+        errorBanner.textContent = "Please correct the highlighted errors before submitting.";
+        errorBanner.classList.remove("hidden");
+        return;
+      }
+
+      // Successful registration mock
+      successBanner.textContent = `Office "${name}" registered successfully into PresenX!`;
+      successBanner.classList.remove("hidden");
+      form.reset();
+    });
+  </script>
+</body>
+</html>
