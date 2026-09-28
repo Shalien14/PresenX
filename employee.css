@@ -1,0 +1,141 @@
+   .hidden {
+     display: none;
+   }
+
+   :root {
+     --bg-dark: #08111e;
+     --card-bg: #0f1d30;
+     --card-border: rgba(255, 255, 255, 0.08);
+     --primary: #2563eb;
+     --primary-hover: #1d4ed8;
+     --text-main: #ffffff;
+     --text-muted: #94a3b8;
+     --input-bg: #16263d;
+     --input-border: #243b5a;
+     --danger: #ef4444;
+     --radius: 12px;
+     --transition: all 0.2s ease-in-out;
+   }
+
+   * {
+     box-sizing: border-box;
+     margin: 0;
+     padding: 0;
+     font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+   }
+
+   body {
+     background: radial-gradient(circle at 50% 10%, #152e4d 0%, var(--bg-dark) 100%);
+     color: var(--text-main);
+     min-height: 100vh;
+     display: flex;
+     flex-direction: column;
+     justify-content: space-between;
+   }
+
+   .login-container {
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     padding: 1.5rem;
+     flex: 1;
+   }
+
+
+   .login-card {
+     width: 100%;
+     max-width: 440px;
+     background: var(--card-bg);
+     border: 1px solid var(--card-border);
+     border-radius: var(--radius);
+     padding: 2.5rem 2rem;
+     box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6);
+   }
+
+   .login-header h1 {
+     font-size: 1.6rem;
+     font-weight: 700;
+     margin-bottom: 0.4rem;
+     text-align: center;
+   }
+
+   .form-group {
+     margin-bottom: 1.25rem;
+   }
+
+   .form-label {
+     display: block;
+     font-size: 0.85rem;
+     font-weight: 600;
+     margin-bottom: 0.4rem;
+     color: #cbd5e1;
+   }
+
+   .form-control {
+     width: 100%;
+     padding: 0.75rem 0.9rem;
+     background-color: var(--input-bg);
+     border: 1px solid var(--input-border);
+     border-radius: 8px;
+     color: #ffffff;
+     font-size: 0.95rem;
+     outline: none;
+     transition: var(--transition);
+   }
+
+   .form-control:focus {
+     border-color: var(--primary);
+     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+   }
+
+   .btn-submit {
+     width: 100%;
+     padding: 0.85rem;
+     background-color: var(--primary);
+     color: #ffffff;
+     border: none;
+     border-radius: 8px;
+     font-size: 0.95rem;
+     font-weight: 600;
+     cursor: pointer;
+     display: inline-flex;
+     align-items: center;
+     justify-content: center;
+     gap: 0.5rem;
+     transition: var(--transition);
+   }
+
+
+
+   .login-nav {
+     padding: 1.5rem 2rem;
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+   }
+
+   .nav-brand {
+     display: flex;
+     align-items: center;
+     gap: 0.6rem;
+     text-decoration: none;
+     color: #ffffff;
+     font-weight: 700;
+     font-size: 1.15rem;
+     letter-spacing: -0.01em;
+   }
+
+   .nav-brand svg {
+     width: 24px;
+     height: 24px;
+     fill: var(--primary);
+   }
+
+
+   /* Footer */
+   footer {
+     text-align: center;
+     padding: 1.5rem;
+     color: #64748b;
+     font-size: 0.8rem;
+   }
