@@ -1,0 +1,172 @@
+/* Remove default browser spacing */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+
+/* Whole page */
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f6f9;
+    color: #222;
+}
+
+
+/* Header */
+
+.header {
+    background-color: #1e3a5f;
+    color: white;
+
+    padding: 20px 40px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+
+.header h1 {
+    font-size: 26px;
+}
+
+
+/* Notification count */
+
+.notification-count {
+    background-color: white;
+    color: #1e3a5f;
+
+    padding: 10px 15px;
+
+    border-radius: 20px;
+
+    font-size: 14px;
+    font-weight: bold;
+}
+
+
+.notification-count span {
+    background-color: #e74c3c;
+    color: white;
+
+    padding: 4px 8px;
+
+    border-radius: 50%;
+
+    margin-right: 5px;
+}
+
+
+/* Main area */
+
+.notification-container {
+    width: 80%;
+    max-width: 900px;
+
+    margin: 40px auto;
+}
+
+
+.notification-container h2 {
+    margin-bottom: 20px;
+    font-size: 24px;
+}
+
+
+/* Notification card */
+
+.notification-card {
+    background-color: white;
+
+    display: flex;
+    align-items: center;
+
+    padding: 20px;
+
+    margin-bottom: 15px;
+
+    border-radius: 10px;
+
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+    cursor: pointer;
+
+    transition: 0.2s;
+}
+
+
+/* Card hover effect */
+
+.notification-card:hover {
+    transform: translateY(-2px);
+
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+
+/* Icon */
+
+.notification-icon {
+    font-size: 30px;
+
+    width: 60px;
+    height: 60px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background-color: #e8f1ff;
+
+    border-radius: 50%;
+
+    margin-right: 20px;
+}
+
+
+/* Notification text */
+
+.notification-content {
+    flex: 1;
+}
+
+
+.notification-content h3 {
+    margin-bottom: 7px;
+
+    color: #1e3a5f;
+
+    font-size: 18px;
+}
+
+
+.notification-content p {
+    color: #555;
+
+    line-height: 1.5;
+}
+
+
+.request-time {
+    display: block;
+
+    margin-top: 8px;
+
+    color: #888;
+
+    font-size: 13px;
+}
+
+
+/* Arrow */
+
+.arrow {
+    font-size: 28px;
+
+    color: #1e3a5f;
+}
