@@ -17,25 +17,7 @@ app.use(express.json());
 // FRONTEND
 // ==========================================
 
-// Serve frontend folder
-app.use(
-    "/frontend",
-    express.static(path.join(__dirname, "../frontend"))
-);
-
-// Serve employee page
-app.get("/employee.html", (req, res) => {
-    res.sendFile(
-        path.join(__dirname, "../employee.html")
-    );
-});
-
-// Serve employee CSS
-app.get("/employee.css", (req, res) => {
-    res.sendFile(
-        path.join(__dirname, "../employee.css")
-    );
-});
+app.use(express.static(path.join(__dirname, "../frontend")));
 
 
 // ==========================================
