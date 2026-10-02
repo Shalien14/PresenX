@@ -71,17 +71,17 @@ def add_employee():
     print("FORM:", request.form)
     print("FILES:", request.files)
 
-    employee_name = request.form.get("name")
+    employee_id = request.form.get("employee_id")
     image = request.files.get("image")
 
-    if not employee_name:
+    if not employee_id:
         return "Employee name not received!"
 
     if not image or image.filename == "":
         return "Image not received!"
 
     # Save image into the existing Known_faces folder
-    filename = f"{employee_name.strip()}.jpg"
+    filename = f"{employee_id.strip()}.jpg"
     image_path = os.path.join(KNOWN_FACES_DIR, filename)
     image.save(image_path)
     print("Image Saved:", image_path)
@@ -95,14 +95,14 @@ def add_employee():
 
     # Load existing embeddings.pkl (from Known_faces) and update it
     database = load_database()
-    database[employee_name] = [embedding]      # add / overwrite
+    database[employee_id] = [embedding]      # add / overwrite
     save_database(database)
 
-    print(f"{employee_name} added successfully.")
+    print(f"{employee_id} added successfully.")
     print(f"Database now contains {len(database)} people.")
 
     return f"""
-    <h2>{employee_name} added successfully!</h2>
+    <h2>{employee_id} added successfully!</h2>
     <p>Image saved to: {image_path}</p>
     <p>Embedding updated in: {EMBEDDINGS_FILE}</p>
     <a href="/">Add Another Employee</a>

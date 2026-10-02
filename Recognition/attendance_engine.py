@@ -91,10 +91,10 @@ def load_or_build_database(force_rebuild=False):
         if path.suffix.lower() not in {".jpg", ".jpeg", ".png"}:
             continue
 
-        # Clean name from filename
-        name = path.stem.split("_")[0].replace("-", " ").strip().title()
+        # Employee ID from filename
+        employee_id = path.stem.strip()
 
-        if name in existing_names and not force_rebuild:
+        if employee_id in existing_names and not force_rebuild:
             continue  # already have this person
 
         image = cv2.imread(str(path))
@@ -104,8 +104,8 @@ def load_or_build_database(force_rebuild=False):
 
         emb = get_face_embedding(image)
         if emb is not None:
-            database.setdefault(name, []).append(emb)
-            print(f"  + Added/Updated: {name}")
+            database.setdefault(employee_id, []).append(emb)
+            print(f"  + Added/Updated: {employee_id}")
             new_faces_found = True
         else:
             print(f"  × No face detected in {path.name}")
@@ -119,20 +119,21 @@ def load_or_build_database(force_rebuild=False):
 
 
 def recognize_face(query_embedding, database):
-    best_name = "Unknown"
+    best_employee_id = "Unknown"
     best_score = -1.0
     query_embedding = normalize_embedding(query_embedding)
 
-    for name, refs in database.items():
+    for employee_id, refs in database.items():
         scores = [float(np.dot(query_embedding, ref)) for ref in refs]
         person_best = max(scores) if scores else -1.0
         if person_best > best_score:
             best_score = person_best
-            best_name = name
+            best_employee_id = employee_id
 
     if best_score < MATCH_THRESHOLD:
-        best_name = "Unknown"
-    return best_name, best_score
+        best_employee_id = "Unknown"
+
+    return best_employee_id, best_score
 
 
 # ============================================================
@@ -141,32 +142,23 @@ def recognize_face(query_embedding, database):
 
 
 def mark_attendance(
-    name: str,
-    similarity: float,
-    employee_mapping: dict
+    employee_id: str,
+    similarity: float
 ) -> bool:
-
-    employee_id = employee_mapping.get(name)
-
-    if not employee_id:
-        print(
-            f"[WARNING] No employee found for recognized person: {name}"
-        )
-        return False
 
     success = send_attendance(employee_id, "ENTRY")
 
     if not success:
         print(
-            f"[ERROR] Failed to record attendance for "
-            f"{name} ({employee_id})"
+            f"[ERROR] Failed to record attendance "
+            f"for {employee_id}"
         )
         return False
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     print(
-        f"[ATTENDANCE] {name} ({employee_id}) "
+        f"[ATTENDANCE] {employee_id} "
         f"marked present at {now} ({similarity:.1%})"
     )
 
@@ -203,36 +195,36 @@ def get_today_attendance():
 # LOAD EMPLOYEE MAPPING FROM PRESENX
 # ============================================================
 
-def load_employee_mapping():
-    try:
-        response = requests.get(
-            f"{API_BASE_URL}/employees",
-            timeout=5
-        )
+# def load_employee_mapping():
+#     try:
+#         response = requests.get(
+#             f"{API_BASE_URL}/employees",
+#             timeout=5
+#         )
 
-        response.raise_for_status()
+#         response.raise_for_status()
 
-        data = response.json()
+#         data = response.json()
 
-        employees = data.get("employees", [])
+#         employees = data.get("employees", [])
 
-        mapping = {}
+#         mapping = {}
 
-        for employee in employees:
-            name = employee["name"]
-            employee_id = employee["employee_id"]
+#         for employee in employees:
+#             name = employee["name"]
+#             employee_id = employee["employee_id"]
 
-            mapping[name] = employee_id
+#             mapping[name] = employee_id
 
-        print("Employee mapping loaded:")
-        for name, employee_id in mapping.items():
-            print(f"  {name} -> {employee_id}")
+#         print("Employee mapping loaded:")
+#         for name, employee_id in mapping.items():
+#             print(f"  {name} -> {employee_id}")
 
-        return mapping
+#         return mapping
 
-    except requests.RequestException as e:
-        print(f"ERROR: Could not connect to PresenX backend: {e}")
-        return {}
+#     except requests.RequestException as e:
+#         print(f"ERROR: Could not connect to PresenX backend: {e}")
+#         return {}
 
 # ============================================================
 # SEND ATTENDANCE TO YOUR BACKEND
@@ -285,11 +277,6 @@ def send_attendance(employee_id, status="ENTRY"):
 def main():
     # Set force_rebuild=True if you want to completely rebuild the database
     known_database = load_or_build_database(force_rebuild=False)
-    employee_mapping = load_employee_mapping()
-
-    if not employee_mapping:
-        print("Could not load employee mapping from PresenX backend.")
-        return
 
     if not known_database:
         print("No known faces found. Add photos to Known_faces/ and restart.")
@@ -348,7 +335,7 @@ def main():
             small = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
             faces = app.get(small)
 
-            current_names = set()
+            current_employee_ids = set()
 
             for face in faces:
                 if face.det_score < DETECTION_THRESHOLD:
@@ -356,37 +343,43 @@ def main():
 
                 bbox = (face.bbox * 2).astype(int)
                 emb = normalize_embedding(face.embedding)
-                name, similarity = recognize_face(emb, known_database)
+                employee_id, similarity = recognize_face(emb,known_database)
 
-                cached_faces.append((bbox, name, similarity))
-                current_names.add(name)
+                cached_faces.append((bbox, employee_id, similarity))
+                current_employee_ids.add(employee_id)
 
-                if name != "Unknown":
-                    confirmation_counter[name] = confirmation_counter.get(name, 0) + 1
-                    # if confirmation_counter[name] >= CONFIRMATION_FRAMES:
-                    #     mark_attendance(name, similarity)
-                    #     confirmation_counter[name] = 0
-                    if confirmation_counter[name] >= CONFIRMATION_FRAMES:
+                if employee_id != "Unknown":
+                    confirmation_counter[employee_id] = (
+                        confirmation_counter.get(employee_id, 0) + 1
+                    )
 
-                        if name not in attendance_recorded:
-                            success = mark_attendance(name,similarity,employee_mapping)
+                    if confirmation_counter[employee_id] >= CONFIRMATION_FRAMES:
+
+                        if employee_id not in attendance_recorded:
+
+                            success = mark_attendance(
+                                employee_id,
+                                similarity
+                            )
 
                             if success:
-                                attendance_recorded.add(name)
-                                attendance_count = len(get_today_attendance())
+                                attendance_recorded.add(employee_id)
 
-                        confirmation_counter[name] = 0
+                        confirmation_counter[employee_id] = 0 
 
             # Decay people who disappeared
-            for name in list(confirmation_counter.keys()):
-                if name not in current_names:
-                    confirmation_counter[name] = max(0, confirmation_counter[name] - 1)
+            for employee_id in list(confirmation_counter.keys()):
+                if employee_id not in current_employee_ids:
+                    confirmation_counter[employee_id] = max(
+                        0,
+                        confirmation_counter[employee_id] - 1
+                    )
 
         # Draw
         for bbox, name, similarity in cached_faces:
             x1, y1, x2, y2 = bbox
             color = (0, 255, 0) if name != "Unknown" else (0, 0, 255)
-            label = f"{name} ({int(similarity*100)}%)"
+            label = f"{employee_id} ({int(similarity*100)}%)"
 
             cv2.rectangle(display, (x1, y1), (x2, y2), color, 2)
             (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
