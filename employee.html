@@ -15,12 +15,10 @@
       <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
       PresenX
     </a>
-    <a href="admin-dashboard.html" class="btn-back">
+    <a href="frontend/admin-dashboard.html" class="btn-back"></a>
       &larr; Back
     </a>
   </nav>
-
-
 
 
     <main class="login-container">
@@ -29,38 +27,76 @@
                 <h1>Add Employee</h1>
             </div>
 
-    <form id="forms">
-        <div class = "form-group">
-        <label class="form-label" for="EmployeeID" >EmployeeID</label>
-        <input class="form-control" type="text" id="EmployeeID" required>
+    <form id="add-employee-form">
+
+        <div class="form-group">
+            <label class="form-label" for="employee-id">Employee ID</label>
+            <input
+                class="form-control"
+                type="text"
+                id="employee-id"
+                required
+            >
         </div>
 
-         <div class = "form-group">
-        <label class="form-label" for="EmployeeImage">EmployeeImage</label>
-        <input class="form-control" id="image" type="file" name="EmployeeImage" accept="image/*">
+        <div class="form-group">
+            <label class="form-label" for="employee-image">Employee Image</label>
+            <input
+                class="form-control"
+                type="file"
+                id="employee-image"
+                name="image"
+                accept="image/*"
+                required
+            >
         </div>
 
-         <div class = "form-group">
-        <label class="form-label" for="EmployeeName">EmployeeName</label>
-        <input class="form-control" type="text">
+        <div class="form-group">
+            <label class="form-label" for="employee-name">Employee Name</label>
+            <input
+                class="form-control"
+                type="text"
+                id="employee-name"
+                required
+            >
         </div>
 
-         <div class = "form-group">
-        <label class="form-label" for="designation">Designation</label>
-        <input class="form-control" type="text">
+        <div class="form-group">
+            <label class="form-label" for="employee-designation">Designation</label>
+            <input
+                class="form-control"
+                type="text"
+                id="employee-designation"
+                required
+            >
         </div>
 
-        <div class = "form-group">
-        <label class="form-label" for="Department">Department</label>
-        <input class="form-control" type="text">
+        <div class="form-group">
+            <label class="form-label" for="employee-department">Department</label>
+            <input
+                class="form-control"
+                type="text"
+                id="employee-department"
+                required
+            >
         </div>
 
-        <div class = "form-group">
-        <label class="form-label" for="Room">Room</label>
-        <input class="form-control" type="text">
+        <div class="form-group">
+            <label class="form-label" for="employee-room">Room</label>
+            <input
+                class="form-control"
+                type="text"
+                id="employee-room"
+                required
+            >
         </div>
 
-        <button type="submit" id="submit" class="btn-submit">Submit</button>
+        <p id="employee-message"></p>
+
+        <button type="submit" id="submit" class="btn-submit">
+            Add Employee
+        </button>
+
     </form>
     </div>
 </div>
@@ -71,6 +107,7 @@
     Smart Presence Telemetry • Official Restricted Console
   </footer>
 
+  <script src="frontend/js/script.js"></script>
 </body>
 
 </html> 

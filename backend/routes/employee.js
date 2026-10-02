@@ -1,7 +1,10 @@
 const express = require("express");
 const router = express.Router();
-
+const multer = require("multer");
 const db = require("../database/database");
+const upload = multer({
+    storage: multer.memoryStorage()
+});
 
 // ==========================================
 // GET ALL EMPLOYEES
@@ -47,9 +50,9 @@ router.get("/", (req, res) => {
 
 
 // ==========================================
-// ADD EMPLOYEE
+// ADD EMPLOYEE + REGISTER FACE
 // ==========================================
-router.post("/", (req, res) => {
+router.post("/", upload.single("image"), async (req, res) => {
 
     const {
         employee_id,
@@ -59,7 +62,12 @@ router.post("/", (req, res) => {
         room
     } = req.body;
 
-    // Validate required fields
+    const image = req.file;
+
+    // ==========================================
+    // VALIDATION
+    // ==========================================
+
     if (
         !employee_id ||
         !name ||
@@ -73,11 +81,84 @@ router.post("/", (req, res) => {
         });
     }
 
+    if (!image) {
+        return res.status(400).json({
+            success: false,
+            error: "Employee image is required"
+        });
+    }
+
     try {
 
-        // ------------------------------
-        // Add employee
-        // ------------------------------
+        // ==========================================
+        // CHECK DUPLICATE EMPLOYEE ID FIRST
+        // ==========================================
+
+        const existingEmployee = db.prepare(`
+            SELECT employee_id
+            FROM employees
+            WHERE employee_id = ?
+        `).get(employee_id);
+
+        if (existingEmployee) {
+            return res.status(409).json({
+                success: false,
+                error: "Employee ID already exists"
+            });
+        }
+
+
+        // ==========================================
+        // SEND IMAGE TO PYTHON CV SERVICE
+        // ==========================================
+
+        const formData = new FormData();
+
+        formData.append(
+            "employee_id",
+            employee_id
+        );
+
+        formData.append(
+            "image",
+            new Blob(
+                [image.buffer],
+                { type: image.mimetype }
+            ),
+            image.originalname
+        );
+
+
+        const cvResponse = await fetch(
+            "http://localhost:5002/register-face",
+            {
+                method: "POST",
+                body: formData
+            }
+        );
+
+
+        const cvResult = await cvResponse.json();
+
+
+        // ==========================================
+        // CV REGISTRATION FAILED
+        // ==========================================
+
+        if (!cvResponse.ok || !cvResult.success) {
+
+            return res.status(400).json({
+                success: false,
+                error: cvResult.error ||
+                       "Face registration failed"
+            });
+        }
+
+
+        // ==========================================
+        // ADD EMPLOYEE TO DATABASE
+        // ==========================================
+
         const addEmployee = db.prepare(`
             INSERT INTO employees
             (
@@ -99,9 +180,10 @@ router.post("/", (req, res) => {
         );
 
 
-        // ------------------------------
-        // Create initial official status
-        // ------------------------------
+        // ==========================================
+        // CREATE INITIAL OFFICIAL STATUS
+        // ==========================================
+
         const addStatus = db.prepare(`
             INSERT INTO official_status
             (
@@ -121,23 +203,23 @@ router.post("/", (req, res) => {
         );
 
 
+        // ==========================================
+        // SUCCESS
+        // ==========================================
+
         res.status(201).json({
             success: true,
-            message: "Employee added successfully"
+            message: "Employee and face registered successfully",
+            employee_id: employee_id
         });
+
 
     } catch (error) {
 
-        // Duplicate employee ID
-        if (error.message.includes("UNIQUE")) {
-
-            return res.status(409).json({
-                success: false,
-                error: "Employee ID already exists"
-            });
-        }
-
-        console.error("Error adding employee:", error);
+        console.error(
+            "Error adding employee:",
+            error
+        );
 
         res.status(500).json({
             success: false,
