@@ -1,15 +1,15 @@
 {
-  "name": "project",
+  "name": "presenx-backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "add_employees.js",
+  "description": "PresenX backend API",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "setup": "node add_employees.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
+  "author": "HexaNexus",
   "license": "ISC",
   "dependencies": {
     "better-sqlite3": "^9.6.0",
