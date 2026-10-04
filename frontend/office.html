@@ -99,6 +99,28 @@
 
         </div>
 
+        <!--Registration Certificate-->
+        <div class="form-group">
+          <label class="form-label" for="registration-document">
+            Registration Certificate
+          </label>
+          <input type="file" id="registration-document" class="form-control" accept=".pdf,.jpeg,.jpg,.png" required/>
+          <span class="field-error" id="err-registration-document"></span>
+        </div>
+
+        <!-- Authorization Document -->
+      <div class="form-group">
+        <label class="form-label" for="authorization-document">
+          Official Authorization Document
+        </label>
+
+        <input type="file" id="authorization-document" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required
+        />
+
+        <span class="field-error" id="err-authorisation-document"></span>
+      </div>
+
+      
         <!-- Action Buttons -->
         <div class="form-actions">
           <button type="button" class="btn-secondary" onclick="window.history.back()">Cancel</button>
@@ -113,86 +135,273 @@
     PresenX Automated Presence Platform &bull; IoT Telemetry & Vision AI
   </footer>
 
-  <script>
+<script>
     const form = document.getElementById("office-form");
     const errorBanner = document.getElementById("error-banner");
     const successBanner = document.getElementById("success-banner");
 
     function setError(inputId, errId, message) {
-      const input = document.getElementById(inputId);
-      const errSpan = document.getElementById(errId);
-      input.classList.add("input-invalid");
-      errSpan.textContent = message;
+        const input = document.getElementById(inputId);
+        const errSpan = document.getElementById(errId);
+
+        input.classList.add("input-invalid");
+        errSpan.textContent = message;
     }
 
     function clearErrors() {
-      document.querySelectorAll(".form-control").forEach(el => el.classList.remove("input-invalid"));
-      document.querySelectorAll(".field-error").forEach(el => el.textContent = "");
-      errorBanner.classList.add("hidden");
-      successBanner.classList.add("hidden");
+        document.querySelectorAll(".form-control").forEach(el => {
+            el.classList.remove("input-invalid");
+        });
+
+        document.querySelectorAll(".field-error").forEach(el => {
+            el.textContent = "";
+        });
+
+        errorBanner.classList.add("hidden");
+        successBanner.classList.add("hidden");
     }
 
-    form.addEventListener("submit", function (e) {
-      e.preventDefault();
-      clearErrors();
+    form.addEventListener("submit", async function (e) {
 
-      let hasError = false;
+        e.preventDefault();
+        clearErrors();
 
-      // Extract values
-      const name = document.getElementById("office-name").value.trim();
-      const type = document.getElementById("office-type").value.trim();
-      const regNo = document.getElementById("reg-no").value.trim();
-      const address = document.getElementById("address").value.trim();
-      const email = document.getElementById("email").value.trim();
-      const phone = document.getElementById("phone").value.trim();
-      const website = document.getElementById("website").value.trim();
+        let hasError = false;
 
-      // Required field checks
-      if (!name) { setError("office-name", "err-office-name", "Office name is required."); hasError = true; }
-      if (!type) { setError("office-type", "err-office-type", "Office type is required."); hasError = true; }
-      if (!regNo) { setError("reg-no", "err-reg-no", "Registration number is required."); hasError = true; }
-      if (!address) { setError("address", "err-address", "Address is required."); hasError = true; }
+        const name =
+            document.getElementById("office-name").value.trim();
 
-      // Email Regex Validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!email) {
-        setError("email", "err-email", "Email is required.");
-        hasError = true;
-      } else if (!emailRegex.test(email)) {
-        setError("email", "err-email", "Enter a valid email address.");
-        hasError = true;
-      }
+        const type =
+            document.getElementById("office-type").value.trim();
 
-      // Phone Number Validation (digits, optional +, space, hyphen)
-      const phoneRegex = /^(\+?\d{1,4}[- ]?)?\d{7,12}$/;
-      if (!phone) {
-        setError("phone", "err-phone", "Phone number is required.");
-        hasError = true;
-      } else if (!phoneRegex.test(phone.replace(/\s+/g, ''))) {
-        setError("phone", "err-phone", "Enter a valid phone number (e.g. +94 77 123 4567).");
-        hasError = true;
-      }
+        const regNo =
+            document.getElementById("reg-no").value.trim();
 
-      // Website Validation (optional, but if present must be URL)
-      if (website) {
-        const urlPattern = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
-        if (!urlPattern.test(website)) {
-          setError("website", "err-website", "Enter a valid URL (e.g. https://domain.com).");
-          hasError = true;
+        const address =
+            document.getElementById("address").value.trim();
+
+        const email =
+            document.getElementById("email").value.trim();
+
+        const phone =
+            document.getElementById("phone").value.trim();
+
+        const website =
+            document.getElementById("website").value.trim();
+
+        const description =
+            document.getElementById("description").value.trim();
+
+        const registrationDocument =
+            document.getElementById("registration-document").files[0];
+
+        const authorizationDocument =
+            document.getElementById("authorization-document").files[0];
+
+        if (!name) {
+            setError(
+                "office-name",
+                "err-office-name",
+                "Office name is required."
+            );
+            hasError = true;
         }
-      }
 
-      if (hasError) {
-        errorBanner.textContent = "Please correct the highlighted errors before submitting.";
-        errorBanner.classList.remove("hidden");
-        return;
-      }
+        if (!type) {
+            setError(
+                "office-type",
+                "err-office-type",
+                "Office type is required."
+            );
+            hasError = true;
+        }
 
-      // Successful registration mock
-      successBanner.textContent = `Office "${name}" registered successfully into PresenX!`;
-      successBanner.classList.remove("hidden");
-      form.reset();
+        if (!regNo) {
+            setError(
+                "reg-no",
+                "err-reg-no",
+                "Registration number is required."
+            );
+            hasError = true;
+        }
+
+        if (!address) {
+            setError(
+                "address",
+                "err-address",
+                "Address is required."
+            );
+            hasError = true;
+        }
+
+        if (!registrationDocument) {
+            setError(
+                "registration-document",
+                "err-registration-document",
+                "Registration Certificate is required."
+            );
+            hasError = true;
+        }
+
+        if (!authorizationDocument) {
+            setError(
+                "authorization-document",
+                "err-authorization-document",
+                "Official authorization document is required."
+            );
+            hasError = true;
+        }
+
+        const emailRegex =
+            /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!email) {
+
+            setError(
+                "email",
+                "err-email",
+                "Email is required."
+            );
+
+            hasError = true;
+
+        } else if (!emailRegex.test(email)) {
+
+            setError(
+                "email",
+                "err-email",
+                "Enter a valid email address."
+            );
+
+            hasError = true;
+        }
+
+        const cleanPhone =
+            phone.replace(/[\s-]/g, "");
+
+        const phoneRegex =
+            /^\+?\d{7,15}$/;
+
+        if (!phone) {
+
+            setError(
+                "phone",
+                "err-phone",
+                "Phone number is required."
+            );
+
+            hasError = true;
+
+        } else if (!phoneRegex.test(cleanPhone)) {
+
+            setError(
+                "phone",
+                "err-phone",
+                "Enter a valid phone number."
+            );
+
+            hasError = true;
+        }
+
+        if (website) {
+
+            try {
+
+                new URL(website);
+
+            } catch (error) {
+
+                setError(
+                    "website",
+                    "err-website",
+                    "Enter a valid URL, e.g. https://domain.com"
+                );
+
+                hasError = true;
+            }
+        }
+
+        if (hasError) {
+
+            errorBanner.textContent =
+                "Please correct the highlighted errors before submitting.";
+
+            errorBanner.classList.remove("hidden");
+
+            return;
+        }
+
+        const formData = new FormData();
+
+        formData.append("name", name);
+        formData.append("type", type);
+        formData.append("reg_no", regNo);
+        formData.append("address", address);
+        formData.append("email", email);
+        formData.append("phone", phone);
+        formData.append("website", website);
+        formData.append("description", description);
+
+        formData.append(
+            "registrationDocument",
+            registrationDocument
+        );
+
+        formData.append(
+            "authorisationDocument",
+            authorizationDocument
+        );
+
+        try {
+
+            const response = await fetch(
+                "http://localhost:5001/api/request",
+                {
+                    method: "POST",
+                    body: formData
+                }
+            );
+
+
+            const result = await response.json();
+
+            if (response.ok) {
+
+                successBanner.textContent =
+                    result.message ||
+                    "Office registration submitted successfully.";
+
+                successBanner.classList.remove("hidden");
+
+                form.reset();
+
+            }
+
+            else {
+
+                errorBanner.textContent =
+                    result.message ||
+                    "Office registration failed.";
+
+                errorBanner.classList.remove("hidden");
+            }
+
+        } catch (error) {
+
+            console.error(
+                "Office registration error:",
+                error
+            );
+
+            errorBanner.textContent =
+                "Unable to connect to the server.";
+
+            errorBanner.classList.remove("hidden");
+        }
+
     });
-  </script>
+</script>
+
+
 </body>
 </html>
