@@ -6,6 +6,7 @@ const db = require("./database/database");
 
 const attendenceRoute = require("./routes/employee_atten");
 const employeeRoutes = require("./routes/employee");
+const organisationRoutes=require("./routes/organisation")
 
 const app = express();
 
@@ -31,6 +32,8 @@ app.get("/", (req, res) => {
 app.use("/api", attendenceRoute);
 
 app.use("/api/employees", employeeRoutes);
+
+app.use("/api",organisationRoutes);
 
 
 // ==========================================
