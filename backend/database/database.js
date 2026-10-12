@@ -73,6 +73,19 @@ db.prepare(`
     )
 `).run();
 
+//db.prepare(`ALTER TABLE organisations
+//ADD COLUMN rejection_reason TEXT;`).run();
+
+//db.prepare(`
+    //ALTER TABLE organisations
+    //RENAME COLUMN authorisation_document TO verification_document
+//`).run();
+
+//db.prepare(`
+    //ALTER TABLE organisations
+    //RENAME COLUMN authorisation_document_type TO verification_document_type
+//`).run();
+
 db.prepare(`
     INSERT OR IGNORE INTO official_status
     (employee_id, presence, availability, updated_at)

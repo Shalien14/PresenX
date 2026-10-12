@@ -108,16 +108,16 @@
           <span class="field-error" id="err-registration-document"></span>
         </div>
 
-        <!-- Authorization Document -->
+        <!-- Verification Document -->
       <div class="form-group">
-        <label class="form-label" for="authorization-document">
-          Official Authorization Document
+        <label class="form-label" for="verification-document">
+          Official Verification Document
         </label>
 
-        <input type="file" id="authorization-document" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required
+        <input type="file" id="verification-document" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required
         />
 
-        <span class="field-error" id="err-authorisation-document"></span>
+        <span class="field-error" id="err-verification-document"></span>
       </div>
 
       
@@ -195,8 +195,8 @@
         const registrationDocument =
             document.getElementById("registration-document").files[0];
 
-        const authorizationDocument =
-            document.getElementById("authorization-document").files[0];
+        const verificationDocument =
+            document.getElementById("verification-document").files[0];
 
         if (!name) {
             setError(
@@ -243,7 +243,7 @@
             hasError = true;
         }
 
-        if (!authorizationDocument) {
+        if (!verificationDocument) {
             setError(
                 "authorization-document",
                 "err-authorization-document",
@@ -348,8 +348,8 @@
         );
 
         formData.append(
-            "authorisationDocument",
-            authorizationDocument
+            "verificationDocument",
+            verificationDocument
         );
 
         try {

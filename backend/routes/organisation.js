@@ -26,11 +26,11 @@ const upload = multer({
 // Sending request route
 router.post("/request", upload.fields([
     {
-        name: "registrationDocument", // Fixed spelling mismatch with frontend/controller
+        name: "registrationDocument",
         maxCount: 1
     }, 
     {
-        name: "authorisationDocument",
+        name: "verificationDocument",
         maxCount: 1
     }
 ]),
@@ -40,7 +40,7 @@ router.post("/request", upload.fields([
 
         // Extract files using the correct object keys
         const reg_doc = req.files?.registrationDocument?.[0];
-        const auth_doc = req.files?.authorisationDocument?.[0];
+        const ver_doc = req.files?.verificationDocument?.[0];
         
         if (!reg_doc) {
             return res.status(400).json({
@@ -48,18 +48,32 @@ router.post("/request", upload.fields([
                 message: "Registration certificate is required."
             });
         }
-        if (!auth_doc) {
-            return res.status(400).json({ // Fixed typo: res.satus -> res.status
+        if (!ver_doc) {
+            return res.status(400).json({
                 success: false,
-                message: "Authorisation document is required."
+                message: "Verification document is required."
             });
+        }
+
+        const existingOrg=db.prepare(`SELECT id, office_name,status
+            FROM organisations
+            WHERE registration_no=?
+            `).get(reg_no)
+
+        if (existingOrg){
+            return res.status(409).json({
+                success: false,
+                message:"An organisation with this registration number has already submitted a request.",
+                organisationId: existingOrg.id,
+                status: existingOrg.status
+            })
         }
 
         const statement = db.prepare(`
             INSERT INTO organisations (
                 office_name, office_type, registration_no, address, email, contact_number, 
                 official_website, description, registration_document, registration_document_type, 
-                authorisation_document, authorisation_document_type, status
+                verification_document, verification_document_type, status
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
@@ -75,8 +89,8 @@ router.post("/request", upload.fields([
             description,
             reg_doc.buffer,
             reg_doc.mimetype,
-            auth_doc.buffer,
-            auth_doc.mimetype,
+            ver_doc.buffer,
+            ver_doc.mimetype,
             "pending"
         );
 
