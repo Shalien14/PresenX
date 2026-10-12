@@ -3,8 +3,29 @@ const db = require("../database/database");
 const router = express.Router();
 
 // GET ALL PENDING NOTIFICATIONS
+
+/* GET ORGANISATION NOTIFICATIONS BY STATUS */
+
 router.get("/notification", (req, res) => {
     try {
+        // Read the selected status from the URL.
+        // Default to pending when no status is supplied.
+        const status = req.query.status || "pending";
+
+        const allowedStatuses = [
+            "pending",
+            "accepted",
+            "rejected"
+        ];
+
+        // Validate the requested status
+        if (!allowedStatuses.includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid organisation status."
+            });
+        }
+
         const notifications = db.prepare(`
             SELECT
                 id,
@@ -12,27 +33,25 @@ router.get("/notification", (req, res) => {
                 status,
                 submitted_at
             FROM organisations
-            WHERE status = 'pending'
+            WHERE status = ?
             ORDER BY submitted_at DESC
-        `).all();
+        `).all(status);
 
         res.json({
             success: true,
             notifications: notifications
         });
-    }
 
-    catch (error) {
-        console.error(
-            "Error loading notifications:",
-            error
-        );
+    } catch (error) {
+        console.error("Error loading notifications:", error);
+
         res.status(500).json({
             success: false,
-            message: "Failed to load notifications"
+            message: "Failed to load notifications."
         });
     }
 });
+
 
 // GET ONE ORGANISATION REQUEST
 router.get("/notification/:id", (req, res) => {

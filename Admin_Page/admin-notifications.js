@@ -1,94 +1,177 @@
+
 console.log("admin-notifications.js loaded");
 
-async function loadNotifications() {
+const API_BASE_URL = "http://localhost:5001/api";
+
+const container = document.querySelector(
+    ".notification-container"
+);
+
+const count = document.getElementById(
+    "notificationCount"
+);
+
+const countLabel = document.getElementById(
+    "countLabel"
+);
+
+const filterButtons = document.querySelectorAll(
+    ".filter-btn"
+);
+
+
+// Load notifications for the selected status
+async function loadNotifications(status = "pending") {
 
     try {
+        container.textContent = "Loading requests...";
 
         const response = await fetch(
-            "http://localhost:5001/api/notification"
+            `${API_BASE_URL}/notification?status=${status}`
         );
+
+        if (!response.ok) {
+            throw new Error("Failed to load requests.");
+        }
 
         const data = await response.json();
 
-        console.log("Received data:", data);
+        if (!Array.isArray(data.notifications)) {
+            throw new Error("Invalid notification data.");
+        }
 
-        const container =
-            document.querySelector(".notification-container");
+        // Clear previous notifications
+        container.innerHTML = "";
 
-        const count =
-            document.getElementById("notificationCount");
-
-        // Show number of notifications
+        // Update count and heading
         count.textContent = data.notifications.length;
 
+        const labels = {
+            pending: "Pending Requests",
+            accepted: "Accepted Organisations",
+            rejected: "Rejected Organisations"
+        };
 
-        // Create each notification
+        countLabel.textContent = labels[status];
+
+        // Show a message if there are no requests
+        if (data.notifications.length === 0) {
+            container.textContent =
+                `No ${status} organisations found.`;
+            return;
+        }
+
+        // Create notification cards
         data.notifications.forEach(notification => {
 
-            console.log("Creating notification:", notification);
-
             const card = document.createElement("div");
-
             card.className = "notification-card";
 
-            card.innerHTML = `
-                <div class="notification-icon">
-                    🏢
-                </div>
+            const icon = document.createElement("div");
+            icon.className = "notification-icon";
+            icon.textContent = "🏢";
 
-                <div class="notification-content">
+            const content = document.createElement("div");
+            content.className = "notification-content";
 
-                    <h3>New Office Request</h3>
+            const heading = document.createElement("h3");
+            heading.textContent =
+                notification.office_name;
 
-                    <p>
-                        <strong>${notification.office_name}</strong>
-                        has requested to add their office
-                        to the website.
-                    </p>
+            const description = document.createElement("p");
 
-                    <span class="request-time">
-                        ${notification.submitted_at}
-                    </span>
+            const statusText = document.createElement("span");
+            statusText.className =
+                `status-label status-${notification.status}`;
+            statusText.textContent =
+                notification.status.toUpperCase();
 
-                </div>
+            const time = document.createElement("span");
+            time.className = "request-time";
+            if (notification.submitted_at) {
+    // Convert the database timestamp into a standard format
+    const timestamp = notification.submitted_at.replace(
+        /^(\d{4}-\d{2}-\d{2}) (\d{1,2})-(\d{2})-(\d{2})$/,
+        "$1T$2:$3:$4Z"
+    );
 
-                <div class="arrow">
-                    →
-                </div>
-            `;
+    const date = new Date(timestamp);
 
-            card.addEventListener("click", function () {
+    if (!isNaN(date.getTime())) {
+        time.textContent = date.toLocaleString("en-GB", {
+            timeZone: "Asia/Colombo",
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true
+        });
+    } else {
+        time.textContent = notification.submitted_at;
+    }
+}
 
+            description.textContent =
+                `Office request status: ${notification.status}`;
+
+            content.append(
+                heading,
+                description,
+                statusText,
+                document.createElement("br"),
+                time
+            );
+
+            const arrow = document.createElement("div");
+            arrow.className = "arrow";
+            arrow.textContent = "→";
+
+            card.append(icon, content, arrow);
+
+            card.addEventListener("click", () => {
                 openRequest(notification.id);
-
             });
 
             container.appendChild(card);
-
-            console.log("Card added:", card);
-
         });
 
+    } catch (error) {
+        console.error("Notification error:", error);
+
+        container.textContent =
+            "Unable to load requests. Please try again.";
     }
-
-    catch (error) {
-
-        console.error(
-            "Notification error:",
-            error
-        );
-
-    }
-
 }
 
 
+// Change the selected filter
+filterButtons.forEach(button => {
+
+    button.addEventListener("click", () => {
+
+        // Update active button
+        filterButtons.forEach(btn => {
+            btn.classList.remove("active");
+        });
+
+        button.classList.add("active");
+
+        // Load organisations with the selected status
+        loadNotifications(button.dataset.status);
+    });
+});
+
+
+// Open organisation details
 function openRequest(requestId) {
 
     window.location.href =
-        "office-request.html?id=" + requestId;
-
+        "office-request.html?id=" +
+        encodeURIComponent(requestId);
 }
 
 
+// Initially show pending requests
 loadNotifications();
