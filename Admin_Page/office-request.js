@@ -1,4 +1,7 @@
-// Get the request ID from the URL
+
+// GET REQUEST ID FROM URL
+const API_BASE_URL = "http://localhost:5001/api";
+console.log("office-request.js loaded");
 
 const urlParams = new URLSearchParams(
     window.location.search
@@ -7,138 +10,204 @@ const urlParams = new URLSearchParams(
 const requestId = urlParams.get("id");
 
 
-// Example data
 
-const officeRequests = {
+// LOAD ORGANISATION DETAILS
+async function loadOrganisation() {
+    // Check whether request ID exists
 
-    1: {
-        name: "ABC Engineering Pvt Ltd",
-        type: "Engineering Company",
-        registration: "REG-2026-001",
-        address: "123 Main Street, Colombo",
-        email: "contact@abcengineering.com",
-        phone: "+94 77 123 4567",
-        website: "www.abcengineering.com",
-        description:
-            "ABC Engineering provides engineering consultancy and technical services."
-    },
-
-    2: {
-        name: "Tech Solutions Lanka",
-        type: "IT Company",
-        registration: "REG-2026-002",
-        address: "45 Galle Road, Colombo",
-        email: "info@techsolutions.lk",
-        phone: "+94 71 555 8899",
-        website: "www.techsolutions.lk",
-        description:
-            "Tech Solutions Lanka provides software development and IT services."
-    },
-
-    3: {
-        name: "Global IT Solutions",
-        type: "Technology Company",
-        registration: "REG-2026-003",
-        address: "78 Kandy Road, Colombo",
-        email: "contact@globalit.lk",
-        phone: "+94 76 222 3344",
-        website: "www.globalit.lk",
-        description:
-            "Global IT Solutions provides technology and digital transformation services."
+    if (!requestId) {
+        alert(
+            "No organisation request was selected."
+        );
+        return;
     }
 
-};
+
+    try {
+        const response = await fetch(
+           `${API_BASE_URL}/notification/${requestId}`
+        );
+
+        const data = await response.json();
+
+        console.log(
+            "Organisation data:",
+            data
+        );
+
+        // Check whether request was successful
+        if (!response.ok) {
+            alert(
+                data.message ||
+                "Failed to load organisation"
+            );
+            return;
+        }
+
+        // Get organisation object
+        const office = data.organisation;
 
 
-// Get selected office
+        // DISPLAY ORGANISATION DETAILS
+       
+        document.getElementById(
+            "officeName"
+        ).textContent =
+            office.office_name;
 
-const office = officeRequests[requestId];
+        document.getElementById(
+            "officeType"
+        ).textContent =
+            office.office_type;
+
+        document.getElementById(
+            "registrationNumber"
+        ).textContent =
+            office.registration_no;
+
+        document.getElementById(
+            "officeAddress"
+        ).textContent =
+            office.address;
+
+        document.getElementById(
+            "officeEmail"
+        ).textContent =
+            office.email;
+
+        document.getElementById(
+            "officePhone"
+        ).textContent =
+            office.contact_number;
+
+        document.getElementById(
+            "officeWebsite"
+        ).textContent =
+            office.official_website;
+
+        document.getElementById(
+            "officeDescription"
+        ).textContent =
+            office.description;
+
+    }
 
 
-// Display office details
+    catch (error) {
+        console.error(
+            "Error loading organisation:",
+            error
+        );
 
-if (office) {
-
-    document.getElementById("officeName").textContent =
-        office.name;
-
-    document.getElementById("officeType").textContent =
-        office.type;
-
-    document.getElementById("registrationNumber").textContent =
-        office.registration;
-
-    document.getElementById("officeAddress").textContent =
-        office.address;
-
-    document.getElementById("officeEmail").textContent =
-        office.email;
-
-    document.getElementById("officePhone").textContent =
-        office.phone;
-
-    document.getElementById("officeWebsite").textContent =
-        office.website;
-
-    document.getElementById("officeDescription").textContent =
-        office.description;
+        alert(
+            "Unable to load organisation details"
+        );
+    }
 
 }
 
 
-// Go back to notification page
+// Load organisation when page opens
+loadOrganisation();
+
+// GO BACK TO NOTIFICATION PAGE
 
 function goBack() {
-
     window.location.href =
         "admin-notifications.html";
-
 }
 
+// ACCEPT REQUEST
+async function acceptRequest() {
 
-// Accept request
-
-function acceptRequest() {
-
-    alert(
-        "Office request has been accepted."
+    const confirmAccept = confirm(
+        "Are you sure you want to accept this office request?"
     );
 
+
+    if (!confirmAccept) {
+        return;
+    }
+
+
+    try {
+        const response = await fetch(
+    `${API_BASE_URL}/notification/${requestId}/accept`,
+    {
+        method: "POST"
+    }
+);
+
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            alert(
+                data.message ||
+                "Failed to accept request."
+            );
+
+            return;
+        }
+
+
+        alert(
+            "Office request has been accepted."
+        );
+
+        // Go back to notification page
+
+        window.location.href =
+            "admin-notifications.html";
+
+    }
+
+
+    catch (error) {
+
+        console.error(
+            "Accept error:",
+            error
+        );
+
+        alert(
+            "Unable to accept the request."
+        );
+    }
 }
 
 
-// Show rejection box
+// SHOW REJECTION BOX
 
 function showRejectBox() {
 
-    document.getElementById("rejectModal").style.display =
-        "flex";
-
+    document.getElementById(
+        "rejectModal"
+    ).style.display = "flex";
 }
 
-
-// Close rejection box
+// CLOSE REJECTION BOX
 
 function closeRejectBox() {
 
-    document.getElementById("rejectModal").style.display =
-        "none";
+    document.getElementById(
+        "rejectModal"
+    ).style.display = "none";
 
 }
 
+// REJECT REQUEST
 
-// Reject request
-
-function rejectRequest() {
+async function rejectRequest() {
 
     const reason =
-        document.getElementById("rejectReason").value.trim();
+        document.getElementById(
+            "rejectReason"
+        ).value.trim();
 
-
-    // Check whether admin entered a reason
+    // Check whether reason was entered
 
     if (reason === "") {
-
         alert(
             "Please provide a reason for rejection."
         );
@@ -147,25 +216,76 @@ function rejectRequest() {
     }
 
 
-    alert(
-        "Office request rejected.\n\nReason: "
-        + reason
-    );
+    try {
+        const response = await fetch(
+    `${API_BASE_URL}/notification/${requestId}/reject`,
+    {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            reason: reason
+        })
+    }
+);
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            alert(
+                data.message ||
+                "Failed to reject request."
+            );
+            return;
+        }
 
 
-    // Close modal
+        alert(
+            "Office request has been rejected."
+        );
 
-    closeRejectBox();
+        // Close modal
+        closeRejectBox();
+
+        // Return to notification page
+
+        window.location.href =
+            "admin-notifications.html";
+
+    }
+
+
+    catch (error) {
+
+        console.error(
+            "Reject error:",
+            error
+        );
+
+
+        alert(
+            "Unable to reject the request."
+        );
+    }
 
 }
 
+// VIEW REGISTRATION DOCUMENT
 
-// View document
+function viewRegistrationDocument() {
 
-function viewDocument() {
+    window.open(
+    `${API_BASE_URL}/notification/${requestId}/document/registration`,
+    "_blank"
+);
+}
 
-    alert(
-        "The submitted document would open here."
+// VIEW AUTHORISATION DOCUMENT
+
+function viewVerificationDocument() {
+    window.open(
+        `${API_BASE_URL}/notification/${requestId}/document/verification`,
+        "_blank"
     );
-
 }

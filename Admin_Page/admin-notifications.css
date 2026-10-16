@@ -49,19 +49,6 @@ body {
     font-weight: bold;
 }
 
-
-.notification-count span {
-    background-color: #e74c3c;
-    color: white;
-
-    padding: 4px 8px;
-
-    border-radius: 50%;
-
-    margin-right: 5px;
-}
-
-
 /* Main area */
 
 .notification-container {
@@ -169,4 +156,55 @@ body {
     font-size: 28px;
 
     color: #1e3a5f;
+}
+
+.notification-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.filter-btn {
+    padding: 10px 20px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: white;
+    color: #333;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.filter-btn:hover {
+    background: #f3f4f6;
+}
+
+.filter-btn.active {
+    background: #1d4ed8;
+    color: white;
+    border-color: #1d4ed8;
+}
+
+.status-label {
+    display: inline-block;
+    margin: 8px 0;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.status-pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-accepted {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-rejected {
+    background: #fee2e2;
+    color: #991b1b;
 }
