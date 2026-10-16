@@ -2,9 +2,9 @@ const express = require("express");
 const db = require("../database/database");
 const router = express.Router();
 
-// GET ALL PENDING NOTIFICATIONS
 
-/* GET ORGANISATION NOTIFICATIONS BY STATUS */
+
+//GET ORGANISATION NOTIFICATIONS BY STATUS 
 
 router.get("/notification", (req, res) => {
     try {
