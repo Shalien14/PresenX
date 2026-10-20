@@ -55,9 +55,6 @@ router.get("/notification", (req, res) => {
 
 // GET ONE ORGANISATION REQUEST
 router.get("/notification/:id", (req, res) => {
-    console.log(
-    db.prepare(`PRAGMA table_info(organisations)`).all()
-);
     try {
         const id = req.params.id;
         const organisation = db.prepare(`
@@ -110,11 +107,19 @@ router.post("/notification/:id/accept", (req, res) => {
         }
 
         // Update status
-        db.prepare(`
+        const result = db.prepare(`
             UPDATE organisations
-            SET status = 'accepted'
-            WHERE id = ?
+            SET status = 'accepted',
+                rejection_reason = NULL
+            WHERE id = ? AND status = 'pending'
         `).run(id);
+
+        if (result.changes === 0) {
+            return res.status(409).json({
+                success: false,
+                message: "Organisation request has already been processed."
+            });
+        }
 
         res.json({
             success: true,
@@ -163,16 +168,19 @@ router.post("/notification/:id/reject", (req, res) => {
         }
 
         // Update status and rejection reason
-        db.prepare(`
+        const result = db.prepare(`
             UPDATE organisations
-            SET
-                status = 'rejected',
+            SET status = 'rejected',
                 rejection_reason = ?
-            WHERE id = ?
-        `).run(
-            reason.trim(),
-            id
-        );
+            WHERE id = ? AND status = 'pending'
+        `).run(reason.trim(), id);
+
+        if (result.changes === 0) {
+            return res.status(409).json({
+                success: false,
+                message: "Organisation request has already been processed."
+            });
+        }
 
         res.json({
             success: true,

@@ -62,8 +62,9 @@ db.prepare(`
         description VARCHAR(150),
         registration_document BLOB NOT NULL,
         registration_document_type VARCHAR(100),
-        authorisation_document BLOB NOT NULL,
-        authorisation_document_type VARCHAR(100),
+        verification_document BLOB NOT NULL,
+        verification_document_type VARCHAR(100),
+        rejection_reason TEXT,
         status TEXT NOT NULL CHECK (
             status IN ('accepted', 'rejected', 'pending')
         ),
@@ -72,6 +73,46 @@ db.prepare(`
         )
     )
 `).run();
+
+// Migration: update the organisations table schema
+const columns = db
+    .prepare("PRAGMA table_info(organisations)")
+    .all();
+
+const columnNames = new Set(
+    columns.map(column => column.name)
+);
+
+// Rename legacy document columns when necessary
+if (
+    columnNames.has("authorisation_document") &&
+    !columnNames.has("verification_document")
+) {
+    db.exec(`
+        ALTER TABLE organisations
+        RENAME COLUMN authorisation_document
+        TO verification_document
+    `);
+}
+
+if (
+    columnNames.has("authorisation_document_type") &&
+    !columnNames.has("verification_document_type")
+) {
+    db.exec(`
+        ALTER TABLE organisations
+        RENAME COLUMN authorisation_document_type
+        TO verification_document_type
+    `);
+}
+
+// Add rejection_reason if it is missing
+if (!columnNames.has("rejection_reason")) {
+    db.exec(`
+        ALTER TABLE organisations
+        ADD COLUMN rejection_reason TEXT
+    `);
+}
 
 //db.prepare(`ALTER TABLE organisations
 //ADD COLUMN rejection_reason TEXT;`).run();
