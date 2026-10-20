@@ -140,7 +140,6 @@ router.post("/", upload.single("image"), async (req, res) => {
 
         const cvResult = await cvResponse.json();
 
-
         // ==========================================
         // CV REGISTRATION FAILED
         // ==========================================

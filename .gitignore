@@ -1,11 +1,30 @@
+# Environment variables and secrets
 .env
+.env.*
+!.env.example
+
+# Python
 venv/
 .venv/
 __pycache__/
-*.pyc
+*.py[cod]
+
+# Node.js
 node_modules/
+
+# Local databases
 *.db
 *.db-shm
 *.db-wal
+*.db-journal
+
+# Generated attendance and biometric data
 Attendance/
 Known_faces/
+
+# Logs
+logs/
+*.log
+
+# macOS
+.DS_Store

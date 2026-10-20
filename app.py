@@ -4,6 +4,7 @@ import pickle
 import numpy as np
 from flask import Flask, request, jsonify
 from insightface.app import FaceAnalysis
+from pathlib import Path
 
 app = Flask(__name__)
 
@@ -11,14 +12,15 @@ app = Flask(__name__)
 # PATHS
 # ==========================================================
 
-KNOWN_FACES_DIR = "Known_faces"
-EMBEDDINGS_FILE = os.path.join(
-    KNOWN_FACES_DIR,
-    "embeddings.pkl"
-)
+PROJECT_ROOT = Path(__file__).resolve().parent
 
-os.makedirs(KNOWN_FACES_DIR, exist_ok=True)
+KNOWN_FACES_DIR = PROJECT_ROOT / "Known_faces"
+EMBEDDINGS_FILE = KNOWN_FACES_DIR / "embeddings.pkl"
 
+KNOWN_FACES_DIR.mkdir(parents=True, exist_ok=True)
+
+print("Known faces directory:", KNOWN_FACES_DIR)
+print("Embeddings database:", EMBEDDINGS_FILE)
 
 # ==========================================================
 # INSIGHTFACE
