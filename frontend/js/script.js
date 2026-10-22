@@ -349,45 +349,113 @@ if (employeeForm) {
 
         event.preventDefault();
 
-        const employeeData = {
-            employee_id: document.getElementById("employee-id").value.trim(),
-            name: document.getElementById("employee-name").value.trim(),
-            designation: document.getElementById("employee-designation").value.trim(),
-            department: document.getElementById("employee-department").value.trim(),
-            room: document.getElementById("employee-room").value.trim()
-        };
-
         const message = document.getElementById("employee-message");
+        const submitButton = document.getElementById("submit");
+
+        const employeeId = document
+            .getElementById("employee-id")
+            .value
+            .trim();
+
+        const name = document
+            .getElementById("employee-name")
+            .value
+            .trim();
+
+        const designation = document
+            .getElementById("employee-designation")
+            .value
+            .trim();
+
+        const department = document
+            .getElementById("employee-department")
+            .value
+            .trim();
+
+        const room = document
+            .getElementById("employee-room")
+            .value
+            .trim();
+
+        const imageInput = document.getElementById("employee-image");
+
+        // ==========================================
+        // VALIDATION
+        // ==========================================
+
+        if (!imageInput.files.length) {
+            message.textContent = "Please select an employee image.";
+            message.style.color = "red";
+            return;
+        }
+
+        // ==========================================
+        // CREATE FORM DATA
+        // ==========================================
+
+        const formData = new FormData();
+
+        formData.append("employee_id", employeeId);
+        formData.append("name", name);
+        formData.append("designation", designation);
+        formData.append("department", department);
+        formData.append("room", room);
+        formData.append("image", imageInput.files[0]);
+
+        // ==========================================
+        // SUBMIT
+        // ==========================================
 
         try {
+
+            submitButton.disabled = true;
+            submitButton.textContent = "Registering...";
+
+            message.textContent = "";
 
             const response = await fetch(
                 `${API_BASE_URL}/employees`,
                 {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(employeeData)
+                    body: formData
                 }
             );
 
             const result = await response.json();
 
             if (!response.ok) {
-                throw new Error(result.error || "Failed to add employee");
+                throw new Error(
+                    result.error || "Failed to add employee"
+                );
             }
 
-            message.textContent = "Employee added successfully!";
-            message.style.color = "green";
-            employeeForm.reset();
+            // ==========================================
+            // SUCCESS
+            // ==========================================
 
+            message.textContent =
+                "Employee and face registered successfully!";
+
+            message.style.color = "green";
+
+            employeeForm.reset();
 
         } catch (error) {
 
-            console.error(error);
+            console.error(
+                "Error adding employee:",
+                error
+            );
 
             message.textContent = error.message;
+            message.style.color = "red";
+
+        } finally {
+
+            submitButton.disabled = false;
+            submitButton.textContent = "Add Employee";
+
         }
+
     });
 }

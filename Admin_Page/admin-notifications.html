@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin Notifications</title>
+
+    <link rel="stylesheet" href="admin-notifications.css">
+</head>
+
+<body>
+
+
+<header class="header">
+    <h1>Admin Notifications</h1>
+
+    <div class="notification-count">
+        <span id="notificationCount">0</span>
+        <span id="countLabel">Pending Requests</span>
+    </div>
+</header>
+
+<main>
+    <div class="notification-filters">
+        <button class="filter-btn active"
+                data-status="pending">
+            Pending
+        </button>
+
+        <button class="filter-btn"
+                data-status="accepted">
+            Accepted
+        </button>
+
+        <button class="filter-btn"
+                data-status="rejected">
+            Rejected
+        </button>
+    </div>
+
+    <div class="notification-container"></div>
+</main>
+
+<script src="admin-notifications.js"></script>
+</body>
+</html>

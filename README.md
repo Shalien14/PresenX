@@ -149,15 +149,6 @@ Your feature branch can then be deleted:
 git branch -d feature/ai-cv
 ```
 
-### 9. Activate backend
-
-```
-cd PresenX/backend
-npm install
-npm run setup
-npm start
-```
-
 ### Important Rules
 - ❌ Do not work directly on main. 
 - ❌ Do not push directly to main.
@@ -166,3 +157,55 @@ npm start
 - ✅ Pull the latest main before starting new work.
 - ✅ Create a Pull Request when your work is ready.
 - ✅ Get at least one review before merging.
+
+
+## Running PresenX
+
+### 1. Initial Setup
+
+Clone the repository and navigate to the project directory:
+
+```bash
+git clone <repository-url>
+cd PresenX
+```
+
+Make the launcher executable:
+
+```bash
+chmod +x run_presenx.sh
+```
+
+### 2. Create a Terminal Shortcut (macOS)
+
+PresenX uses a shell alias to make launching the system easier. Run this command once from the project root:
+
+```bash
+echo 'alias presenx="./run_presenx.sh"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+**Note:** This alias assumes the terminal's current directory is the PresenX project root when you launch it.
+
+### 3. Start PresenX
+
+Whenever you want to launch PresenX, navigate to the project root and run:
+
+```bash
+presenx
+```
+
+The startup menu will appear. Select option `1` to start all required services, including the backend, face registration service, and camera attendance engine.
+
+### 4. Stop PresenX
+
+Use the exit option in the launcher menu to stop the services and exit the program.
+
+### Requirements
+
+- Node.js and npm
+- Python 3
+- Required Node.js dependencies installed in `backend/`
+- Required Python packages installed in the project's virtual environment
+- A working webcam for face recognition
+

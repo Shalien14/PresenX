@@ -625,3 +625,30 @@ footer {
   box-shadow: none !important;
   opacity: 0.55;
 }
+
+/* Office Registration Callout */
+.office-signup-action {
+  margin-top: 1.5rem;
+  /* margin-bottom: 2rem; */
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.88rem;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.btn-register-link {
+  color: #60a5fa;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.btn-register-link:hover {
+  color: #93c5fd;
+  text-decoration: underline;
+}
