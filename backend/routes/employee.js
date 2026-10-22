@@ -12,38 +12,56 @@ const upload = multer({
 router.get("/", (req, res) => {
     try {
 
-        const employees = db.prepare(`
-            SELECT
-                e.employee_id,
-                e.name,
-                e.designation,
-                e.department,
-                e.room,
+        const organisationId = req.query.organisationId;
 
-                COALESCE(s.presence, 'ABSENT') AS presence,
-                COALESCE(s.availability, 'AVAILABLE') AS availability,
-                COALESCE(s.updated_at, datetime('now')) AS updated_at
+        let employees;
 
-            FROM employees e
-
-            LEFT JOIN official_status s
-                ON s.employee_id = e.employee_id
-
-            ORDER BY e.employee_id
-        `).all();
+        if (organisationId) {
+            employees = db.prepare(`
+                SELECT
+                    e.employee_id,
+                    e.name,
+                    e.designation,
+                    e.department,
+                    e.room,
+                    COALESCE(s.presence, 'ABSENT') AS presence,
+                    COALESCE(s.availability, 'AVAILABLE') AS availability,
+                    COALESCE(s.updated_at, datetime('now')) AS updated_at
+                FROM employees e
+                LEFT JOIN official_status s
+                    ON s.employee_id = e.employee_id
+                WHERE e.organisation_id = ?
+                ORDER BY e.employee_id
+            `).all(organisationId);
+        } else {
+            employees = db.prepare(`
+                SELECT
+                    e.employee_id,
+                    e.name,
+                    e.designation,
+                    e.department,
+                    e.room,
+                    COALESCE(s.presence, 'ABSENT') AS presence,
+                    COALESCE(s.availability, 'AVAILABLE') AS availability,
+                    COALESCE(s.updated_at, datetime('now')) AS updated_at
+                FROM employees e
+                LEFT JOIN official_status s
+                    ON s.employee_id = e.employee_id
+                ORDER BY e.employee_id
+            `).all();
+        }
 
         res.json({
             success: true,
-            employees: employees
+            employees
         });
 
     } catch (error) {
-
         console.error("Error fetching employees:", error);
 
         res.status(500).json({
             success: false,
-            error: "Failed to fetch employees"
+            error: error.message
         });
     }
 });

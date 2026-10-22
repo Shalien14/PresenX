@@ -127,6 +127,9 @@ if (!columnNames.has("rejection_reason")) {
     //RENAME COLUMN authorisation_document_type TO verification_document_type
 //`).run();
 
+//db.prepare(`ALTER TABLE attendance_events
+//ADD COLUMN organisation_id INTEGER;`).run();
+
 db.prepare(`
     INSERT OR IGNORE INTO official_status
     (employee_id, presence, availability, updated_at)

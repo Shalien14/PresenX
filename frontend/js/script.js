@@ -3,9 +3,19 @@ const API_BASE_URL = "http://localhost:5001/api";
 // Initial Static Data (Easily replaced with API data later)
 let officialsData = [];
 async function loadOfficials() {
-  try {
-    const response = await fetch(`${API_BASE_URL}/employees`);
+  const params = new URLSearchParams(window.location.search);
 
+const organisationId = params.get("organisation");
+
+if (!organisationId) {
+  console.error("No organisation selected");
+  return;
+}
+
+  try {
+   const response = await fetch(
+  `${API_BASE_URL}/employees?organisationId=${organisationId}`
+);
     if (!response.ok) {
       throw new Error("Failed to fetch employees");
     }

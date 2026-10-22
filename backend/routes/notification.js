@@ -296,4 +296,31 @@ router.get(
 );
 
 
+//GET APPROVED ORGANISATIONS
+// GET APPROVED ORGANISATIONS
+router.get("/organisations/approved", (req, res) => {
+    try {
+        const organisations = db.prepare(`
+            SELECT
+                id,
+                office_name
+            FROM organisations
+            WHERE status = 'accepted'
+            ORDER BY office_name
+        `).all();
+
+        res.json({
+            success: true,
+            organisations
+        });
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            success: false,
+            message: "Failed to load organisations"
+        });
+    }
+});
+
 module.exports = router;
