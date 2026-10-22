@@ -65,10 +65,10 @@ if __name__ == "__main__":
 
     print("--------------------------------")
     print("PresenX Python Server")
-    print("Port: 5001")
+    print("Port: 5002")
     print("--------------------------------")
 
     app.run(
         host="0.0.0.0",
-        port=5001
+        port=5002
     )

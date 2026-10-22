@@ -5,7 +5,7 @@ const char* ssid = "";
 
 const char* password = "";
 
-const char* serverURL = "http:// 10.227.105.129:5001/door-open";
+const char* serverURL = "http://"ipaddress":5002/door-open";
 
 const int reedPin = 27;
 
