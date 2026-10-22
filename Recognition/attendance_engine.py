@@ -376,9 +376,9 @@ def main():
                     )
 
         # Draw
-        for bbox, name, similarity in cached_faces:
+        for bbox, employee_id, similarity in cached_faces:
             x1, y1, x2, y2 = bbox
-            color = (0, 255, 0) if name != "Unknown" else (0, 0, 255)
+            color = (0, 255, 0) if employee_id != "Unknown" else (0, 0, 255)
             label = f"{employee_id} ({int(similarity*100)}%)"
 
             cv2.rectangle(display, (x1, y1), (x2, y2), color, 2)
