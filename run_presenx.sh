@@ -9,7 +9,19 @@ set -u
 
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-PYTHON="$ROOT_DIR/venv/bin/python"
+
+if [ -f "$ROOT_DIR/venv/Scripts/python.exe" ]; then
+    # Windows virtual environment (Git Bash)
+    PYTHON="$ROOT_DIR/venv/Scripts/python.exe"
+elif [ -f "$ROOT_DIR/venv/bin/python" ]; then
+    # macOS/Linux virtual environment
+    PYTHON="$ROOT_DIR/venv/bin/python"
+else
+    echo "ERROR: Python virtual environment not found."
+    echo "Create it using: python -m venv venv"
+    exit 1
+fi
+
 NODE="$ROOT_DIR/backend/node_modules/.bin/../node_modules/node/bin/node"
 BACKEND_DIR="$ROOT_DIR/backend"
 APP="$ROOT_DIR/app.py"
