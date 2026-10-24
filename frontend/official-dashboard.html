@@ -14,8 +14,12 @@
       PresenX
     </a>
     <ul class="nav-links">
-      <li><a href="official-dashboard.html" class="nav-link active">Availability</a></li>
-      <li><a href="index.html" class="nav-link">Public View</a></li>
+      <li><a href="#" id="office-link" class="nav-link">
+    Office Portal
+</a></li>
+      <a href="#" id="directory-link" class="nav-link">
+    Public Directory
+</a></li>
       <li><a href="login.html" class="nav-link">Logout</a></li>
     </ul>
   </nav>
@@ -69,5 +73,14 @@
   </footer>
 
   <script src="js/script.js"></script>
+  <script>const params = new URLSearchParams(window.location.search);
+
+const organisationId = params.get("organisation");
+
+document.getElementById("office-link").href =
+    `official-dashboard.html?organisation=${organisationId}`;
+
+document.getElementById("directory-link").href =
+    `index.html?organisation=${organisationId}`;</script>
 </body>
 </html>
