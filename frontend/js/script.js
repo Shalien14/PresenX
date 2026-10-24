@@ -34,6 +34,8 @@ if (!organisationId) {
       attendance: "No attendance data"
     }));
 
+    
+
     // Load real status for every employee
     await Promise.all(
       officialsData.map(async official => {
@@ -71,6 +73,7 @@ if (!organisationId) {
       })
     );
 
+    loadDepartments();//****/
     renderPublicCards(officialsData);
 
   } catch (error) {
@@ -88,6 +91,34 @@ if (!organisationId) {
       `;
     }
   }
+}
+
+///populate departments******
+function loadDepartments() {
+  const deptFilter = document.getElementById("department-filter");
+
+  if (!deptFilter) return;
+
+  // Get unique departments
+  const departments = [
+    ...new Set(
+      officialsData
+        .map(emp => emp.department)
+        .filter(Boolean)
+    )
+  ];
+
+  // Reset dropdown
+  deptFilter.innerHTML =
+    '<option value="ALL">All Departments</option>';
+
+  // Add departments
+  departments.forEach(dept => {
+    const option = document.createElement("option");
+    option.value = dept;
+    option.textContent = dept;
+    deptFilter.appendChild(option);
+  });
 }
 
 // Helper: Status to CSS Class
