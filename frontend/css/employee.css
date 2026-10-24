@@ -139,3 +139,44 @@
      color: #64748b;
      font-size: 0.8rem;
    }
+
+   .status-card{
+    text-align:center;
+    padding:35px;
+    margin-top:20px;
+}
+
+.status-card h2{
+    font-size:32px;
+    margin-bottom:15px;
+    color:#fff;
+}
+
+.status-badge{
+    display:inline-block;
+    padding:10px 20px;
+    border-radius:50px;
+    font-size:13px;
+    font-weight:700;
+    margin-bottom:25px;
+}
+
+.accepted{
+    background:rgba(0,255,136,.15);
+    color:#34d399;
+}
+
+.pending{
+    background:rgba(251,191,36,.15);
+    color:#fbbf24;
+}
+
+.rejected{
+    background:rgba(248,113,113,.15);
+    color:#f87171;
+}
+
+.status-message{
+    color:#9ca3af;
+    margin-bottom:25px;
+}

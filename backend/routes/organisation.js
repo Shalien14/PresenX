@@ -109,6 +109,38 @@ router.post("/request", upload.fields([
     }
 });
 
+router.get("/status/:registrationNumber", (req, res) => {
+    try {
+        const { registrationNumber } = req.params;
 
+        const organisation = db.prepare(`
+            SELECT *
+            FROM organisations
+            WHERE registration_no = ?
+        `).get(registrationNumber);
 
+        if (!organisation) {
+            return res.status(404).json({
+                error: "Organisation not found"
+            });
+        }
+
+        res.json(organisation);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            error: "Server error"
+        });
+    }
+    console.log("Searching:", registrationNumber);
+
+const organisation = db.prepare(`
+    SELECT *
+    FROM organisations
+    WHERE registration_no = ?
+`).get(registrationNumber);
+
+console.log("Found:", organisation);
+});
 module.exports = router;
