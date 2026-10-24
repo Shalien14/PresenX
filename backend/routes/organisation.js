@@ -143,4 +143,43 @@ const organisation = db.prepare(`
 
 console.log("Found:", organisation);
 });
+
+
+router.post("/create-account", (req, res) => {
+
+    try {
+
+        const {
+            organisationId,
+            username,
+            password
+        } = req.body;
+
+        db.prepare(`
+            UPDATE organisations
+            SET
+                username = ?,
+                password = ?,
+                account_created = 1
+            WHERE id = ?
+        `).run(
+            username,
+            password,
+            organisationId
+        );
+
+        res.json({
+            success: true
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            success: false
+        });
+
+    }
+});
 module.exports = router;
