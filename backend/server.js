@@ -8,6 +8,7 @@ const attendenceRoute = require("./routes/employee_atten");
 const employeeRoutes = require("./routes/employee");
 const organisationRoutes=require("./routes/organisation")
 const notificationsRoutes=require("./routes/notification");
+const authRoutes = require("./routes/auth");
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use("/api",organisationRoutes);
 
 app.use("/api",notificationsRoutes)
 
+app.use("/api/auth", authRoutes);
 
 // SERVER
 app.listen(5001, () => {
