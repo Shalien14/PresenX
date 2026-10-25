@@ -92,6 +92,23 @@
         </div>
 
         <p id="employee-message"></p>
+        <div id="temporary-password-panel" hidden>
+        <h3>Employee Login Credentials</h3>
+        <p>Copy the temporary password now. It will not be shown again.</p>
+
+        <p>
+            <strong>Temporary Password:</strong>
+            <code id="temporary-password-value"></code>
+        </p>
+
+        <button type="button" id="copy-temporary-password">
+            Copy Password
+        </button>
+
+        <button type="button" id="close-temporary-password">
+            Close
+        </button>
+    </div>
 
         <button type="submit" id="submit" class="btn-submit">
             Add Employee
