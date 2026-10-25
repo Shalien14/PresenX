@@ -13,6 +13,19 @@ function generateTemporaryPassword() {
     return crypto.randomBytes(18).toString("base64url");
 }
 
+function requireManager(req, res, next) {
+    const user = req.session?.user;
+
+    if (!user || user.role !== "admin") {
+        return res.status(401).json({
+            success: false,
+            error: "Manager login required"
+        });
+    }
+
+    next();
+}
+
 // ==========================================
 // GET ALL EMPLOYEES
 // ==========================================
@@ -37,6 +50,7 @@ router.get("/", (req, res) => {
                 FROM employees e
                 LEFT JOIN official_status s
                     ON s.employee_id = e.employee_id
+                    AND s.organisation_id = e.organisation_id
                 WHERE e.organisation_id = ?
                 ORDER BY e.employee_id
             `).all(organisationId);
@@ -54,6 +68,7 @@ router.get("/", (req, res) => {
                 FROM employees e
                 LEFT JOIN official_status s
                     ON s.employee_id = e.employee_id
+                    AND s.organisation_id = e.organisation_id
                 ORDER BY e.employee_id
             `).all();
         }
@@ -77,17 +92,18 @@ router.get("/", (req, res) => {
 // ==========================================
 // ADD EMPLOYEE + REGISTER FACE
 // ==========================================
-router.post("/", upload.single("image"), async (req, res) => {
-
+router.post("/", requireManager, upload.single("image"), async (req, res) => {
 
     const {
-        organisationId,
         employee_id,
         name,
         designation,
         department,
         room
     } = req.body;
+
+    // Get organization ID from authenticated manager session
+    const organisationId = req.session.user.organisationId;
 
     const image = req.file;
 
@@ -258,7 +274,8 @@ router.post("/", upload.single("image"), async (req, res) => {
         res.status(201).json({
             success: true,
             message: "Employee and face registered successfully",
-            employee_id: employee_id
+            employee_id: employee_id,
+            temporaryPassword: temporaryPassword
         });
 
     } catch (error) {
