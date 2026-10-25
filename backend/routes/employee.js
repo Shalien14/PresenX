@@ -185,7 +185,20 @@ router.post("/", upload.single("image"), async (req, res) => {
         // ==========================================
         // ADD EMPLOYEE TO DATABASE
         // ==========================================
+        // Generate a temporary password
+        const temporaryPassword = generateTemporaryPassword();
 
+        // Hash the temporary password
+        const hashedPassword = await bcrypt.hash(
+            temporaryPassword,
+            12
+        );
+
+        // Set temporary password expiry to 24 hours
+        const expiresAt = new Date(
+            Date.now() + 24 * 60 * 60 * 1000
+        ).toISOString();
+        
         const addEmployee = db.prepare(`
             INSERT INTO employees
             (
@@ -194,9 +207,12 @@ router.post("/", upload.single("image"), async (req, res) => {
                 name,
                 designation,
                 department,
-                room
+                room,
+                password,
+                must_change_password,
+                temp_password_expires_at
             )
-            VALUES (?, ?, ?, ?, ?,?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
 
         addEmployee.run(
@@ -205,9 +221,11 @@ router.post("/", upload.single("image"), async (req, res) => {
             name,
             designation,
             department,
-            room
+            room,
+            hashedPassword,
+            1,
+            expiresAt
         );
-
 
         // ==========================================
         // CREATE INITIAL OFFICIAL STATUS
@@ -216,21 +234,22 @@ router.post("/", upload.single("image"), async (req, res) => {
         const addStatus = db.prepare(`
             INSERT INTO official_status
             (
+                organisation_id,
                 employee_id,
                 presence,
                 availability,
                 updated_at
             )
-            VALUES (?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?)
         `);
 
         addStatus.run(
+            organisationId,
             employee_id,
             "ABSENT",
             "AVAILABLE",
             new Date().toISOString()
         );
-
 
         // ==========================================
         // SUCCESS
@@ -241,7 +260,6 @@ router.post("/", upload.single("image"), async (req, res) => {
             message: "Employee and face registered successfully",
             employee_id: employee_id
         });
-
 
     } catch (error) {
 

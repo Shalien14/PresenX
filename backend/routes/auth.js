@@ -2,9 +2,9 @@ const express = require("express");
 const router = express.Router();
 
 const db = require("../database/database");
-
+const bcrypt = require("bcrypt");
 // LOGIN
-router.post("/login", (req, res) => {
+router.post("/login", async (req, res) => {
     try {
 
         const {
@@ -25,14 +25,26 @@ router.post("/login", (req, res) => {
                 FROM employees
                 WHERE employee_id = ?
                 AND organisation_id = ?
-                AND password = ?
             `).get(
                 employeeId,
-                organisationId,
-                password
+                organisationId
             );
 
+            
+
             if (!employee) {
+                return res.status(401).json({
+                    success: false,
+                    error: "Invalid Employee ID or Password"
+                });
+            }
+
+            const passwordMatches = await bcrypt.compare(
+                password,
+                employee.password
+            );
+
+            if (!passwordMatches) {
                 return res.status(401).json({
                     success: false,
                     error: "Invalid Employee ID or Password"
@@ -42,7 +54,14 @@ router.post("/login", (req, res) => {
             return res.json({
                 success: true,
                 role: "official",
-                employee
+                employee: {
+                    employee_id: employee.employee_id,
+                    name: employee.name,
+                    designation: employee.designation,
+                    department: employee.department,
+                    organisation_id: employee.organisation_id,
+                    must_change_password: employee.must_change_password
+                }
             });
         }
 
@@ -75,7 +94,10 @@ router.post("/login", (req, res) => {
             return res.json({
                 success: true,
                 role: "admin",
-                organisation
+                organisation: {
+                    id: organisation.id,
+                    username: organisation.username
+                }
             });
         }
 
