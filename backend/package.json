@@ -14,8 +14,10 @@
   "dependencies": {
     "bcrypt": "^6.0.0",
     "better-sqlite3": "^9.6.0",
+    "connect-sqlite3": "^0.9.18",
     "cors": "^2.8.6",
     "express": "^5.2.1",
+    "express-session": "^1.19.0",
     "multer": "^2.4.0"
   },
   "devDependencies": {
