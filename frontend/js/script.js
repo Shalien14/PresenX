@@ -103,7 +103,7 @@ function loadDepartments() {
   const departments = [
     ...new Set(
       officialsData
-        .map(emp => emp.department)
+        .map(emp => emp.department?.toLowerCase().trim())
         .filter(Boolean)
     )
   ];
