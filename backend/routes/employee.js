@@ -2,9 +2,16 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const db = require("../database/database");
+const crypto = require("node:crypto");
+const bcrypt = require("bcrypt");
 const upload = multer({
     storage: multer.memoryStorage()
 });
+
+// GENERATE TEMPORARY PASSWORD
+function generateTemporaryPassword() {
+    return crypto.randomBytes(18).toString("base64url");
+}
 
 // ==========================================
 // GET ALL EMPLOYEES

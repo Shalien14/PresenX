@@ -12,6 +12,7 @@
   "author": "HexaNexus",
   "license": "ISC",
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "better-sqlite3": "^9.6.0",
     "cors": "^2.8.6",
     "express": "^5.2.1",
