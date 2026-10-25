@@ -130,6 +130,87 @@ if (!columnNames.has("rejection_reason")) {
 //db.prepare(`ALTER TABLE attendance_events
 //ADD COLUMN organisation_id INTEGER;`).run();
 
+//check attendance_events table
+const tableColumns = db.prepare(
+    "PRAGMA table_info(attendance_events)"
+).all();
+
+const hasOrganisationId = tableColumns.some(
+    col => col.name === "organisation_id"
+);
+
+if (!hasOrganisationId) {
+    db.prepare(`
+        ALTER TABLE attendance_events
+        ADD COLUMN organisation_id INTEGER
+    `).run();
+}
+
+// Check employees table columns
+const employeeColumns = db.prepare(
+    "PRAGMA table_info(employees)"
+).all();
+
+// Add organisation_id if missing
+if (!employeeColumns.some(col => col.name === "organisation_id")) {
+    db.prepare(`
+        ALTER TABLE employees
+        ADD COLUMN organisation_id INTEGER
+    `).run();
+
+    console.log("Added organisation_id column");
+}
+
+// Add password if missing
+if (!employeeColumns.some(col => col.name === "password")) {
+    db.prepare(`
+        ALTER TABLE employees
+        ADD COLUMN password TEXT
+    `).run();
+
+    console.log("Added password column");
+}
+
+//check official _status table
+const officialStatusColumns = db.prepare(
+    "PRAGMA table_info(official_status)"
+).all();
+
+if (!officialStatusColumns.some(col => col.name === "organisation_id")) {
+    db.prepare(`
+        ALTER TABLE official_status
+        ADD COLUMN organisation_id INTEGER
+    `).run();
+
+    console.log("Added organisation_id to official_status");
+}
+
+//check organisation table
+const organisationColumns = db.prepare(
+    "PRAGMA table_info(organisations)"
+).all();
+
+if (!organisationColumns.some(col => col.name === "username")) {
+    db.prepare(`
+        ALTER TABLE organisations
+        ADD COLUMN username TEXT
+    `).run();
+}
+
+if (!organisationColumns.some(col => col.name === "password")) {
+    db.prepare(`
+        ALTER TABLE organisations
+        ADD COLUMN password TEXT
+    `).run();
+}
+
+if (!organisationColumns.some(col => col.name === "account_created")) {
+    db.prepare(`
+        ALTER TABLE organisations
+        ADD COLUMN account_created INTEGER DEFAULT 0
+    `).run();
+}
+
 db.prepare(`
     INSERT OR IGNORE INTO official_status
     (employee_id, presence, availability, updated_at)
