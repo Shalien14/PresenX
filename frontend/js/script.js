@@ -433,9 +433,13 @@ if (employeeForm) {
         // ==========================================
         // CREATE FORM DATA
         // ==========================================
+        const params = new URLSearchParams(window.location.search);
+
+        const organisationId = params.get("organisation");
+
 
         const formData = new FormData();
-
+        formData.append("organisationId", organisationId);
         formData.append("employee_id", employeeId);
         formData.append("name", name);
         formData.append("designation", designation);

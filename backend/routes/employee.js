@@ -72,7 +72,9 @@ router.get("/", (req, res) => {
 // ==========================================
 router.post("/", upload.single("image"), async (req, res) => {
 
+
     const {
+        organisationId,
         employee_id,
         name,
         designation,
@@ -116,7 +118,8 @@ router.post("/", upload.single("image"), async (req, res) => {
             SELECT employee_id
             FROM employees
             WHERE employee_id = ?
-        `).get(employee_id);
+            AND organisation_id = ?
+        `).get(employee_id,organisationId );
 
         if (existingEmployee) {
             return res.status(409).json({
@@ -179,16 +182,18 @@ router.post("/", upload.single("image"), async (req, res) => {
         const addEmployee = db.prepare(`
             INSERT INTO employees
             (
+                organisation_id,
                 employee_id,
                 name,
                 designation,
                 department,
                 room
             )
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?,?)
         `);
 
         addEmployee.run(
+            organisationId,
             employee_id,
             name,
             designation,
