@@ -111,9 +111,11 @@ router.post("/request", upload.fields([
 });
 
 router.get("/status/:registrationNumber", (req, res) => {
-    try {
-        const { registrationNumber } = req.params;
+    const { registrationNumber } = req.params;
 
+
+    try {
+        
         const organisation = db.prepare(`
             SELECT *
             FROM organisations
@@ -127,14 +129,16 @@ router.get("/status/:registrationNumber", (req, res) => {
         }
 
         res.json(organisation);
+        console.log("Searching:", registrationNumber);
 
     } catch (error) {
         console.error(error);
         res.status(500).json({
             error: "Server error"
         });
+        
     }
-    console.log("Searching:", registrationNumber);
+    
 
 const organisation = db.prepare(`
     SELECT *
