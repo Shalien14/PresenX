@@ -12,10 +12,15 @@
   "author": "HexaNexus",
   "license": "ISC",
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "better-sqlite3": "^9.6.0",
+    "connect-sqlite3": "^0.9.18",
     "cors": "^2.8.6",
+    "dotenv": "^18.0.9",
     "express": "^5.2.1",
-    "multer": "^2.4.0"
+    "express-session": "^1.19.0",
+    "multer": "^2.4.0",
+    "sqlite3": "^6.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

@@ -171,6 +171,26 @@ if (!employeeColumns.some(col => col.name === "password")) {
     console.log("Added password column");
 }
 
+// Add first-time password setup flag
+if (!employeeColumns.some(col => col.name === "must_change_password")) {
+    db.prepare(`
+        ALTER TABLE employees
+        ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 1
+    `).run();
+
+    console.log("Added must_change_password column");
+}
+
+// Add temporary password expiry
+if (!employeeColumns.some(col => col.name === "temp_password_expires_at")) {
+    db.prepare(`
+        ALTER TABLE employees
+        ADD COLUMN temp_password_expires_at TEXT
+    `).run();
+
+    console.log("Added temp_password_expires_at column");
+}
+
 //check official _status table
 const officialStatusColumns = db.prepare(
     "PRAGMA table_info(official_status)"

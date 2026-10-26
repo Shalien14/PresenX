@@ -2,9 +2,29 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const db = require("../database/database");
+const crypto = require("node:crypto");
+const bcrypt = require("bcrypt");
 const upload = multer({
     storage: multer.memoryStorage()
 });
+
+// GENERATE TEMPORARY PASSWORD
+function generateTemporaryPassword() {
+    return crypto.randomBytes(18).toString("base64url");
+}
+
+function requireManager(req, res, next) {
+    const user = req.session?.user;
+
+    if (!user || user.role !== "admin") {
+        return res.status(401).json({
+            success: false,
+            error: "Manager login required"
+        });
+    }
+
+    next();
+}
 
 // ==========================================
 // GET ALL EMPLOYEES
@@ -30,6 +50,7 @@ router.get("/", (req, res) => {
                 FROM employees e
                 LEFT JOIN official_status s
                     ON s.employee_id = e.employee_id
+                    AND s.organisation_id = e.organisation_id
                 WHERE e.organisation_id = ?
                 ORDER BY e.employee_id
             `).all(organisationId);
@@ -47,6 +68,7 @@ router.get("/", (req, res) => {
                 FROM employees e
                 LEFT JOIN official_status s
                     ON s.employee_id = e.employee_id
+                    AND s.organisation_id = e.organisation_id
                 ORDER BY e.employee_id
             `).all();
         }
@@ -70,17 +92,18 @@ router.get("/", (req, res) => {
 // ==========================================
 // ADD EMPLOYEE + REGISTER FACE
 // ==========================================
-router.post("/", upload.single("image"), async (req, res) => {
-
+router.post("/", requireManager, upload.single("image"), async (req, res) => {
 
     const {
-        organisationId,
         employee_id,
         name,
         designation,
         department,
         room
     } = req.body;
+
+    // Get organization ID from authenticated manager session
+    const organisationId = req.session.user.organisationId;
 
     const image = req.file;
 
@@ -178,7 +201,20 @@ router.post("/", upload.single("image"), async (req, res) => {
         // ==========================================
         // ADD EMPLOYEE TO DATABASE
         // ==========================================
+        // Generate a temporary password
+        const temporaryPassword = generateTemporaryPassword();
 
+        // Hash the temporary password
+        const hashedPassword = await bcrypt.hash(
+            temporaryPassword,
+            12
+        );
+
+        // Set temporary password expiry to 24 hours
+        const expiresAt = new Date(
+            Date.now() + 24 * 60 * 60 * 1000
+        ).toISOString();
+        
         const addEmployee = db.prepare(`
             INSERT INTO employees
             (
@@ -187,9 +223,12 @@ router.post("/", upload.single("image"), async (req, res) => {
                 name,
                 designation,
                 department,
-                room
+                room,
+                password,
+                must_change_password,
+                temp_password_expires_at
             )
-            VALUES (?, ?, ?, ?, ?,?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
 
         addEmployee.run(
@@ -198,9 +237,11 @@ router.post("/", upload.single("image"), async (req, res) => {
             name,
             designation,
             department,
-            room
+            room,
+            hashedPassword,
+            1,
+            expiresAt
         );
-
 
         // ==========================================
         // CREATE INITIAL OFFICIAL STATUS
@@ -209,21 +250,22 @@ router.post("/", upload.single("image"), async (req, res) => {
         const addStatus = db.prepare(`
             INSERT INTO official_status
             (
+                organisation_id,
                 employee_id,
                 presence,
                 availability,
                 updated_at
             )
-            VALUES (?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?)
         `);
 
         addStatus.run(
+            organisationId,
             employee_id,
             "ABSENT",
             "AVAILABLE",
             new Date().toISOString()
         );
-
 
         // ==========================================
         // SUCCESS
@@ -232,9 +274,9 @@ router.post("/", upload.single("image"), async (req, res) => {
         res.status(201).json({
             success: true,
             message: "Employee and face registered successfully",
-            employee_id: employee_id
+            employee_id: employee_id,
+            temporaryPassword: temporaryPassword
         });
-
 
     } catch (error) {
 

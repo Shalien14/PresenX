@@ -398,14 +398,18 @@ loadOrganisations();
 
         if (result.role === "official") {
 
-            sessionStorage.setItem(
-                "loggedInEmployee",
-                JSON.stringify(result.employee)
-            );
+          sessionStorage.setItem(
+              "loggedInEmployee",
+              JSON.stringify(result.employee)
+          );
 
-            window.location.href =
-                `official-dashboard.html?organisation=${organisationId}`;
-        }
+          if (result.employee.must_change_password === 1) {
+              window.location.href = "set_password.html";
+          } else {
+              window.location.href =
+                  `official-dashboard.html?organisation=${organisationId}`;
+          }
+      }
 
         if (result.role === "admin") {
 

@@ -1,7 +1,12 @@
-# Environment variables and secrets
+# Environment variables
 .env
 .env.*
-!.env.example
+!backend/.env.example
+
+# Local session databases
+*.sqlite-shm
+*.sqlite-wal
+backend/presenx_sessions.sqlite
 
 # Python
 venv/
