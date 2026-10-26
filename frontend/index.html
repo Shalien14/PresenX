@@ -15,7 +15,9 @@
       PresenX
     </a>
     <ul class="nav-links">
-      <li><a href="index.html" class="nav-link active">Directory</a></li>
+      <li><a href="#" id="directory-link" class="nav-link">
+  Directory
+</a></li>
       <li><a href="login.html" class="nav-link btn-login">Staff Login</a></li>
     </ul>
   </nav>
@@ -32,10 +34,6 @@
       <input type="text" id="search-input" class="form-control" placeholder="Search official by name or position...">
       <select id="department-filter" class="form-control">
         <option value="ALL">All Departments</option>
-        <option value="Health Administration">Health Administration</option>
-        <option value="Legal Affairs">Legal Affairs</option>
-        <option value="Urban Development">Urban Development</option>
-        <option value="Finance & Taxation">Finance & Taxation</option>
       </select>
       <select id="status-filter" class="form-control">
         <option value="ALL">All Statuses</option>
@@ -57,5 +55,15 @@
   </footer>
 
   <script src="js/script.js"></script>
+  <script>const params = new URLSearchParams(window.location.search);
+
+const organisationId = params.get("organisation");
+
+
+document.getElementById("directory-link").href =
+    `index.html?organisation=${organisationId}`;
+    
+
+    </script>
 </body>
 </html>

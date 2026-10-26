@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const db = require("../database/database");
+const bcrypt = require("bcrypt");
 
 // Correctly configure Multer with limits and fileFilter inside the options object
 const upload = multer({
@@ -109,4 +110,83 @@ router.post("/request", upload.fields([
     }
 });
 
+router.get("/status/:registrationNumber", (req, res) => {
+    const { registrationNumber } = req.params;
+
+
+    try {
+        
+        const organisation = db.prepare(`
+            SELECT *
+            FROM organisations
+            WHERE registration_no = ?
+        `).get(registrationNumber);
+
+        if (!organisation) {
+            return res.status(404).json({
+                error: "Organisation not found"
+            });
+        }
+
+        res.json(organisation);
+        console.log("Searching:", registrationNumber);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            error: "Server error"
+        });
+        
+    }
+    
+
+const organisation = db.prepare(`
+    SELECT *
+    FROM organisations
+    WHERE registration_no = ?
+`).get(registrationNumber);
+
+console.log("Found:", organisation);
+});
+
+
+router.post("/create-account", async(req, res) => {
+    
+    try {
+
+        const {
+            organisationId,
+            username,
+            password
+        } = req.body;
+
+const hashedPassword = await bcrypt.hash(password, 10);
+
+        db.prepare(`
+            UPDATE organisations
+            SET
+                username = ?,
+                password = ?,
+                account_created = 1
+            WHERE id = ?
+        `).run(
+            username,
+            hashedPassword,
+            organisationId
+        );
+
+        res.json({
+            success: true
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            success: false
+        });
+
+    }
+});
 module.exports = router;

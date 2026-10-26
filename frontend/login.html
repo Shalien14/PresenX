@@ -253,6 +253,13 @@
 
       <!-- Alert for validation errors -->
       <div id="error-alert" class="error-banner"></div>
+      <div class="form-group">
+        <label class="form-label">Organisation</label>
+
+        <select id="organisation-id" class="form-control" required>
+          <option value="">Select Organisation</option>
+        </select>
+      </div>
 
       <form id="admin-login-form">
         <!-- Role Level Selector -->
@@ -263,7 +270,7 @@
             <option value="admin">Manager</option>
           </select>
         </div>
-
+        
         <!-- Official ID or Work Email -->
         <div class="form-group">
           <label class="form-label" for="login-id">Government / Officer ID</label>
@@ -310,98 +317,123 @@
   </footer>
 
   <script>
-    document.getElementById("admin-login-form").addEventListener("submit", async function (e) {
-      e.preventDefault();
 
-      const role = document.getElementById("login-role").value;
-      const employeeId = document.getElementById("login-id").value.trim();
-      const password = document.getElementById("login-password").value.trim();
-      const errorBox = document.getElementById("error-alert");
+    async function loadOrganisations() {
+    const select = document.getElementById("organisation-id");
 
-      errorBox.style.display = "none";
-
-      // Basic validation
-      if (!employeeId || !password) {
-        errorBox.textContent = "Please enter both your Employee ID and Password.";
-        errorBox.style.display = "block";
-        return;
-      }
-
-      // Admin login 
-      if (role === "admin") {
-
-          // Temporary development admin credentials
-          const ADMIN_USERNAME = "manager";
-          const ADMIN_PASSWORD = "manager123";
-
-          if (employeeId !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
-              errorBox.textContent = "Invalid administrator credentials.";
-              errorBox.style.display = "block";
-              return;
-          }
-
-          // Store admin session
-          sessionStorage.setItem(
-              "loggedInAdmin",
-              JSON.stringify({
-                  username: ADMIN_USERNAME,
-                  role: "admin"
-              })
-          );
-
-          // Go to admin dashboard
-          window.location.href = "admin-dashboard.html";
-
-          return;
-      }
-
-      try {
+    try {
         const response = await fetch(
-          "http://localhost:5001/api/employees"
+            "http://localhost:5001/api/organisations/approved"
         );
-
-        if (!response.ok) {
-          throw new Error("Unable to connect to backend.");
-        }
 
         const data = await response.json();
 
-        const employee = data.employees.find(
-          emp => emp.employee_id === employeeId
+        data.organisations.forEach(org => {
+            const option = document.createElement("option");
+
+            option.value = org.id;
+            option.textContent = org.office_name;
+
+            select.appendChild(option);
+        });
+
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+
+loadOrganisations();
+
+
+   document.getElementById(
+    "admin-login-form"
+).addEventListener("submit", async (e) => {
+
+    e.preventDefault();
+  
+
+
+    const role =
+        document.getElementById("login-role").value;
+
+    const organisationId =
+        document.getElementById("organisation-id").value;
+
+    const employeeId =
+        document.getElementById("login-id").value.trim();
+
+    const password =
+        document.getElementById("login-password").value.trim();
+
+    const errorBox =
+        document.getElementById("error-alert");
+
+    errorBox.style.display = "none";
+
+    try {
+
+        const response = await fetch(
+            "http://localhost:5001/api/auth/login",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+                body: JSON.stringify({
+                    role,
+                    organisationId,
+                    employeeId,
+                    password
+                })
+            }
         );
 
-        if (!employee) {
-          errorBox.textContent = "Employee ID not found.";
-          errorBox.style.display = "block";
-          return;
+        const result = await response.json();
+
+        if (!result.success) {
+            throw new Error(result.error);
         }
 
-        // Temporary development authentication
-        if (password !== "1234") {
-          errorBox.textContent = "Incorrect password.";
-          errorBox.style.display = "block";
-          return;
+        if (result.role === "official") {
+
+          sessionStorage.setItem(
+              "loggedInEmployee",
+              JSON.stringify(result.employee)
+          );
+
+          if (result.employee.must_change_password === 1) {
+              window.location.href = "set_password.html";
+          } else {
+              window.location.href =
+                  `official-dashboard.html?organisation=${organisationId}`;
+          }
+      }
+
+        if (result.role === "admin") {
+
+            sessionStorage.setItem(
+    "loggedInAdmin",
+    JSON.stringify({
+        id: result.organisation.id,
+        office_name: result.organisation.office_name,
+        username: result.organisation.username
+    })
+);
+
+            window.location.href =
+                `admin-dashboard.html?organisation=${organisationId}`;
         }
 
-        // Store logged-in employee
-        sessionStorage.setItem(
-          "loggedInEmployee",
-          JSON.stringify(employee)
-        );
-
-        // Go to official dashboard
-        window.location.href =
-          `official-dashboard.html?employee=${employee.employee_id}`;
-
-      } catch (error) {
-        console.error("Login error:", error);
+    } catch (error) {
 
         errorBox.textContent =
-          "Unable to connect to PresenX server.";
+            error.message;
 
         errorBox.style.display = "block";
-      }
-    });
+    }
+});
   </script>
 </body>
 </html>

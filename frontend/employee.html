@@ -92,6 +92,43 @@
         </div>
 
         <p id="employee-message"></p>
+        <div id="temporary-password-panel" class="credentials-card" hidden>
+
+            <div class="credentials-heading">
+                <span class="credentials-success-icon">✓</span>
+                <div>
+                    <h3>Employee Registered!</h3>
+                    <p>Login credentials generated successfully.</p>
+                </div>
+            </div>
+
+            <div class="credentials-body">
+                <label for="temporary-password-value">
+                    TEMPORARY PASSWORD
+                </label>
+
+                <code id="temporary-password-value"></code>
+            </div>
+
+            <p class="credentials-notice">
+                ⏱ Valid for 24 hours. Copy this password before closing.
+            </p>
+
+            <div class="credentials-actions">
+                <button type="button" id="copy-temporary-password">
+                    Copy Password
+                </button>
+
+                <button type="button" id="close-temporary-password">
+                    Done
+                </button>
+            </div>
+
+            <p class="credentials-footer">
+                For security, this password will not be displayed again.
+            </p>
+
+        </div>
 
         <button type="submit" id="submit" class="btn-submit">
             Add Employee
@@ -108,6 +145,9 @@
   </footer>
 
   <script src="js/script.js"></script>
+  <script>const params = new URLSearchParams(window.location.search);
+
+const organisationId = params.get("organisation");</script>
 </body>
 
 </html> 

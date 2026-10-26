@@ -139,3 +139,180 @@
      color: #64748b;
      font-size: 0.8rem;
    }
+
+   .status-card{
+    text-align:center;
+    padding:35px;
+    margin-top:20px;
+}
+
+.status-card h2{
+    font-size:32px;
+    margin-bottom:15px;
+    color:#fff;
+}
+
+.status-badge{
+    display:inline-block;
+    padding:10px 20px;
+    border-radius:50px;
+    font-size:13px;
+    font-weight:700;
+    margin-bottom:25px;
+}
+
+.accepted{
+    background:rgba(0,255,136,.15);
+    color:#34d399;
+}
+
+.pending{
+    background:rgba(251,191,36,.15);
+    color:#fbbf24;
+}
+
+.rejected{
+    background:rgba(248,113,113,.15);
+    color:#f87171;
+}
+
+.status-message{
+    color:#9ca3af;
+    margin-bottom:25px;
+}
+.btn-submit {
+    text-decoration: none;
+}
+
+/* Employee temporary login credentials */
+
+.credentials-card[hidden] {
+    display: none;
+}
+
+.credentials-card {
+    margin: 24px 0;
+    padding: 24px;
+    background: #101c30;
+    border: 1px solid #334155;
+    border-radius: 16px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+    color: #f8fafc;
+}
+
+.credentials-heading {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.credentials-success-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    background: #123e38;
+    color: #6ee7b7;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.credentials-heading h3 {
+    margin: 0 0 5px;
+    color: #f8fafc;
+    font-size: 18px;
+}
+
+.credentials-heading p {
+    margin: 0;
+    color: #a7b6cc;
+    font-size: 13px;
+}
+
+.credentials-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.credentials-body label {
+    color: #a7b6cc;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+#temporary-password-value {
+    display: block;
+    padding: 16px;
+    background: #1e293b;
+    border: 1px solid #475569;
+    border-radius: 10px;
+    color: #f8fafc;
+    font-family: Consolas, monospace;
+    font-size: 15px;
+    overflow-wrap: anywhere;
+    user-select: all;
+}
+
+.credentials-notice {
+    margin: 16px 0;
+    color: #fbbf24;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.credentials-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.credentials-actions button {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+#copy-temporary-password {
+    background: #2563eb;
+    color: white;
+}
+
+#copy-temporary-password:hover {
+    background: #1d4ed8;
+}
+
+#close-temporary-password {
+    background: #334155;
+    color: white;
+}
+
+#close-temporary-password:hover {
+    background: #475569;
+}
+
+.credentials-footer {
+    margin: 16px 0 0;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+@media (max-width: 480px) {
+    .credentials-card {
+        padding: 18px;
+    }
+
+    .credentials-actions {
+        flex-direction: column;
+    }
+}

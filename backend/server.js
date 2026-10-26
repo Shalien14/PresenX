@@ -1,3 +1,6 @@
+require("dotenv").config({
+    path: require("path").join(__dirname, ".env")
+});
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
@@ -8,14 +11,44 @@ const attendenceRoute = require("./routes/employee_atten");
 const employeeRoutes = require("./routes/employee");
 const organisationRoutes=require("./routes/organisation")
 const notificationsRoutes=require("./routes/notification");
+const authRoutes = require("./routes/auth") ;;
+const session = require("express-session");
+const SQLiteStore = require("connect-sqlite3")(session);
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
+// ==========================================
+// SESSION CONFIGURATION
+// ==========================================
 
+if (!process.env.SESSION_SECRET) {
+    throw new Error("SESSION_SECRET is required");
+}
+
+app.use(session({
+    store: new SQLiteStore({
+        db: "presenx_sessions.sqlite",
+        dir: __dirname
+    }),
+    name: "presenx.sid",
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+        maxAge: 60 * 60 * 1000
+    }
+}));
+
+// ==========================================
 // FRONTEND
+// ==========================================
+
 app.use(express.static(path.join(__dirname, "../frontend")));
 app.use(express.static(path.join(__dirname, "../Admin_page")));
 
@@ -34,6 +67,7 @@ app.use("/api",organisationRoutes);
 
 app.use("/api",notificationsRoutes)
 
+app.use("/api/auth", authRoutes);
 
 // SERVER
 app.listen(5001, () => {

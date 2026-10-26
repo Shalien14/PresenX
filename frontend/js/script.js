@@ -34,6 +34,8 @@ if (!organisationId) {
       attendance: "No attendance data"
     }));
 
+    
+
     // Load real status for every employee
     await Promise.all(
       officialsData.map(async official => {
@@ -71,6 +73,7 @@ if (!organisationId) {
       })
     );
 
+    loadDepartments();//****/
     renderPublicCards(officialsData);
 
   } catch (error) {
@@ -88,6 +91,34 @@ if (!organisationId) {
       `;
     }
   }
+}
+
+///populate departments******
+function loadDepartments() {
+  const deptFilter = document.getElementById("department-filter");
+
+  if (!deptFilter) return;
+
+  // Get unique departments
+  const departments = [
+    ...new Set(
+      officialsData
+        .map(emp => emp.department?.toLowerCase().trim())
+        .filter(Boolean)
+    )
+  ];
+
+  // Reset dropdown
+  deptFilter.innerHTML =
+    '<option value="ALL">All Departments</option>';
+
+  // Add departments
+  departments.forEach(dept => {
+    const option = document.createElement("option");
+    option.value = dept;
+    option.textContent = dept;
+    deptFilter.appendChild(option);
+  });
 }
 
 // Helper: Status to CSS Class
@@ -144,7 +175,10 @@ function initPublicSearch() {
 
     const filtered = officialsData.filter((item) => {
       const matchesSearch = item.name.toLowerCase().includes(query) || item.position.toLowerCase().includes(query);
-      const matchesDept = dept === "ALL" || item.department === dept;
+      const matchesDept =
+  dept === "ALL" ||
+  item.department?.trim().toLowerCase() ===
+  dept?.trim().toLowerCase();
       const matchesStatus = status === "ALL" || item.status === status;
       return matchesSearch && matchesDept && matchesStatus;
     });
@@ -402,9 +436,7 @@ if (employeeForm) {
         // ==========================================
         // CREATE FORM DATA
         // ==========================================
-
         const formData = new FormData();
-
         formData.append("employee_id", employeeId);
         formData.append("name", name);
         formData.append("designation", designation);
@@ -423,13 +455,11 @@ if (employeeForm) {
 
             message.textContent = "";
 
-            const response = await fetch(
-                `${API_BASE_URL}/employees`,
-                {
-                    method: "POST",
-                    body: formData
-                }
-            );
+            const response = await fetch("/api/employees", {
+                method: "POST",
+                credentials: "same-origin",
+                body: formData
+            });
 
             const result = await response.json();
 
@@ -444,11 +474,33 @@ if (employeeForm) {
             // ==========================================
 
             message.textContent =
-                "Employee and face registered successfully!";
+              "Employee and face registered successfully!";
 
-            message.style.color = "green";
+          message.style.color = "green";
 
-            employeeForm.reset();
+          const passwordPanel = document.getElementById(
+              "temporary-password-panel"
+          );
+
+          const passwordValue = document.getElementById(
+              "temporary-password-value"
+          );
+
+          if (
+              !result.temporaryPassword ||
+              !passwordPanel ||
+              !passwordValue
+          ) {
+              throw new Error(
+                  "Employee registered, but the temporary password could not be displayed. Contact the administrator."
+              );
+          }
+
+          passwordValue.textContent = result.temporaryPassword;
+          passwordPanel.hidden = false;
+
+          submitButton.disabled = true;
+          employeeForm.reset();
 
         } catch (error) {
 
@@ -461,11 +513,59 @@ if (employeeForm) {
             message.style.color = "red";
 
         } finally {
+            const passwordPanel = document.getElementById(
+                "temporary-password-panel"
+            );
 
-            submitButton.disabled = false;
+            submitButton.disabled = passwordPanel
+                ? !passwordPanel.hidden
+                : false;
+
             submitButton.textContent = "Add Employee";
-
         }
 
+    });
+}
+const copyPasswordButton = document.getElementById(
+    "copy-temporary-password"
+);
+
+const closePasswordButton = document.getElementById(
+    "close-temporary-password"
+);
+
+if (copyPasswordButton && closePasswordButton) {
+
+    copyPasswordButton.addEventListener("click", async () => {
+        const password = document.getElementById(
+            "temporary-password-value"
+        ).textContent;
+
+        try {
+            await navigator.clipboard.writeText(password);
+            copyPasswordButton.textContent = "Copied!";
+        } catch (error) {
+            alert(
+                "Unable to copy automatically. Please copy the password manually."
+            );
+        }
+    });
+
+    closePasswordButton.addEventListener("click", () => {
+        document.getElementById(
+            "temporary-password-value"
+        ).textContent = "";
+
+        document.getElementById(
+            "temporary-password-panel"
+        ).hidden = true;
+
+        copyPasswordButton.textContent = "Copy Password";
+
+        const submitButton = document.getElementById("submit");
+
+        if (submitButton) {
+            submitButton.disabled = false;
+        }
     });
 }

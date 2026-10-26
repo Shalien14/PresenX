@@ -641,14 +641,23 @@ footer {
   border: 1px solid rgba(255, 255, 255, 0.07);
 }
 
-.btn-register-link {
-  color: #60a5fa;
-  font-weight: 600;
-  text-decoration: none;
-  transition: color 0.15s ease;
-}
+
 
 .btn-register-link:hover {
   color: #93c5fd;
   text-decoration: underline;
+}
+
+.office-signup-action{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+}
+
+.btn-register-link {
+    color: #60a5fa;
+    text-decoration: none;
+    font-weight: 600;
 }
