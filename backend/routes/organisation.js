@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const db = require("../database/database");
+const bcrypt = require("bcrypt");
 
 // Correctly configure Multer with limits and fileFilter inside the options object
 const upload = multer({
@@ -145,8 +146,8 @@ console.log("Found:", organisation);
 });
 
 
-router.post("/create-account", (req, res) => {
-
+router.post("/create-account", async(req, res) => {
+    
     try {
 
         const {
@@ -154,6 +155,8 @@ router.post("/create-account", (req, res) => {
             username,
             password
         } = req.body;
+
+const hashedPassword = await bcrypt.hash(password, 10);
 
         db.prepare(`
             UPDATE organisations
@@ -164,7 +167,7 @@ router.post("/create-account", (req, res) => {
             WHERE id = ?
         `).run(
             username,
-            password,
+            hashedPassword,
             organisationId
         );
 

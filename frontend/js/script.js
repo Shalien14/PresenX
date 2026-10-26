@@ -175,7 +175,10 @@ function initPublicSearch() {
 
     const filtered = officialsData.filter((item) => {
       const matchesSearch = item.name.toLowerCase().includes(query) || item.position.toLowerCase().includes(query);
-      const matchesDept = dept === "ALL" || item.department === dept;
+      const matchesDept =
+  dept === "ALL" ||
+  item.department?.trim().toLowerCase() ===
+  dept?.trim().toLowerCase();
       const matchesStatus = status === "ALL" || item.status === status;
       return matchesSearch && matchesDept && matchesStatus;
     });

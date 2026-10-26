@@ -135,8 +135,10 @@ router.post("/login", async (req, res) => {
             `).get(
                 organisationId,
                 employeeId,
-                password
+                
             );
+
+
 
             if (!organisation) {
                 return res.status(401).json({
@@ -144,6 +146,19 @@ router.post("/login", async (req, res) => {
                     error: "Invalid Manager Credentials"
                 });
             }
+
+            const validPassword = await bcrypt.compare(
+    password,
+    organisation.password
+);
+
+if (!validPassword) {
+    return res.status(401).json({
+        success: false,
+        error: "Invalid Manager Credentials"
+    });
+}
+
 
             // Create a new authenticated manager session
             await createLoginSession(req, {
