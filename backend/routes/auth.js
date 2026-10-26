@@ -130,7 +130,7 @@ router.post("/login", async (req, res) => {
                 FROM organisations
                 WHERE id = ?
                 AND username = ?
-                AND password = ?
+                
                 AND status = 'accepted'
             `).get(
                 organisationId,
