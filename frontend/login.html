@@ -237,9 +237,9 @@
       </svg>
       PresenX
     </a>
-    <a href="index.html" class="btn-back">
-      &larr; Public Directory
-    </a>
+    <a id="back-link" href="#" class="btn-back">
+  ← Public Directory
+</a>
   </nav>
 
   <!-- Login Form Box -->
@@ -434,6 +434,15 @@ loadOrganisations();
         errorBox.style.display = "block";
     }
 });
+
+
+const params = new URLSearchParams(window.location.search);
+const organisationId = params.get("organisation");
+
+if (organisationId) {
+    document.getElementById("back-link").href =
+        `index.html?organisation=${organisationId}`;
+}
   </script>
 </body>
 </html>
