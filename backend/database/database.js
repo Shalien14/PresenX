@@ -1,9 +1,10 @@
-const Database=require("better-sqlite3")
-const path = require("path")
-const db=new Database(path.join(__dirname, "presenx.db"))
 
-////
-console.log("database connected successfully")
+const Database = require("better-sqlite3");
+const path = require("path");
+
+const db = new Database(path.join(__dirname, "presenx.db"));
+
+console.log("database connected successfully");
 
 // Employees table
 db.prepare(`
@@ -16,7 +17,6 @@ db.prepare(`
         room TEXT NOT NULL
     )
 `).run();
-
 
 // Attendance events table
 db.prepare(`
@@ -40,7 +40,8 @@ db.prepare(`
             availability IN (
                 'AVAILABLE',
                 'TEMPORARILY UNAVAILABLE',
-                'ON OFFICIAL DUTY'
+                'ON OFFICIAL DUTY',
+                'ABSENT'
             )
         ),
         updated_at TEXT NOT NULL,
@@ -48,7 +49,7 @@ db.prepare(`
     )
 `).run();
 
-//create torganisation
+// Create organisation table
 db.prepare(`
     CREATE TABLE IF NOT EXISTS organisations (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -74,7 +75,7 @@ db.prepare(`
     )
 `).run();
 
-// Migration: update the organisations table schema
+// Migration: update organisations table schema
 const columns = db
     .prepare("PRAGMA table_info(organisations)")
     .all();
@@ -106,7 +107,7 @@ if (
     `);
 }
 
-// Add rejection_reason if it is missing
+// Add rejection_reason if missing
 if (!columnNames.has("rejection_reason")) {
     db.exec(`
         ALTER TABLE organisations
@@ -114,23 +115,7 @@ if (!columnNames.has("rejection_reason")) {
     `);
 }
 
-//db.prepare(`ALTER TABLE organisations
-//ADD COLUMN rejection_reason TEXT;`).run();
-
-//db.prepare(`
-    //ALTER TABLE organisations
-    //RENAME COLUMN authorisation_document TO verification_document
-//`).run();
-
-//db.prepare(`
-    //ALTER TABLE organisations
-    //RENAME COLUMN authorisation_document_type TO verification_document_type
-//`).run();
-
-//db.prepare(`ALTER TABLE attendance_events
-//ADD COLUMN organisation_id INTEGER;`).run();
-
-//check attendance_events table
+// Check attendance_events table
 const tableColumns = db.prepare(
     "PRAGMA table_info(attendance_events)"
 ).all();
@@ -191,7 +176,13 @@ if (!employeeColumns.some(col => col.name === "temp_password_expires_at")) {
     console.log("Added temp_password_expires_at column");
 }
 
-//check official _status table
+// ============================================================
+// ENSURE OFFICIAL STATUS HAS ORGANISATION ID
+// ============================================================
+
+// This must run BEFORE rebuilding official_status,
+// because the migration copies organisation_id.
+
 const officialStatusColumns = db.prepare(
     "PRAGMA table_info(official_status)"
 ).all();
@@ -205,7 +196,82 @@ if (!officialStatusColumns.some(col => col.name === "organisation_id")) {
     console.log("Added organisation_id to official_status");
 }
 
-//check organisation table
+// ============================================================
+// MIGRATION: SUPPORT ABSENT AVAILABILITY
+// ============================================================
+
+const statusTableSql = db.prepare(`
+    SELECT sql
+    FROM sqlite_master
+    WHERE type = 'table' AND name = 'official_status'
+`).get()?.sql || "";
+
+const availabilityConstraint = statusTableSql.match(
+    /availability\s+TEXT\s+NOT\s+NULL\s+CHECK\s*\(\s*availability\s+IN\s*\(([\s\S]*?)\)\s*\)/i
+);
+
+if (!availabilityConstraint) {
+    throw new Error(
+        "Cannot verify official_status availability constraint."
+    );
+}
+
+if (!availabilityConstraint[1].includes("'ABSENT'")) {
+    db.transaction(() => {
+        db.exec(`
+            CREATE TABLE official_status_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                employee_id TEXT UNIQUE NOT NULL,
+                presence TEXT NOT NULL CHECK(
+                    presence IN ('PRESENT', 'ABSENT')
+                ),
+                availability TEXT NOT NULL CHECK(
+                    availability IN (
+                        'AVAILABLE',
+                        'TEMPORARILY UNAVAILABLE',
+                        'ON OFFICIAL DUTY',
+                        'ABSENT'
+                    )
+                ),
+                updated_at TEXT NOT NULL,
+                organisation_id INTEGER,
+                FOREIGN KEY (employee_id)
+                    REFERENCES employees(employee_id)
+            );
+
+            INSERT INTO official_status_new (
+                id,
+                employee_id,
+                presence,
+                availability,
+                updated_at,
+                organisation_id
+            )
+            SELECT
+                id,
+                employee_id,
+                presence,
+                availability,
+                updated_at,
+                organisation_id
+            FROM official_status;
+
+            DROP TABLE official_status;
+
+            ALTER TABLE official_status_new
+            RENAME TO official_status;
+        `);
+    })();
+
+    console.log(
+        "Migrated official_status to support ABSENT availability."
+    );
+}
+
+// ============================================================
+// ORGANISATION ACCOUNT MIGRATIONS
+// ============================================================
+
 const organisationColumns = db.prepare(
     "PRAGMA table_info(organisations)"
 ).all();
@@ -231,12 +297,54 @@ if (!organisationColumns.some(col => col.name === "account_created")) {
     `).run();
 }
 
+// ============================================================
+// EMPLOYEE OFFICIAL STATUS INITIALIZATION
+// ============================================================
+
+// Create missing status records with the correct organisation ID.
 db.prepare(`
-    INSERT OR IGNORE INTO official_status
-    (employee_id, presence, availability, updated_at)
-    SELECT employee_id, 'ABSENT', 'AVAILABLE', datetime('now')
+    INSERT OR IGNORE INTO official_status (
+        employee_id,
+        presence,
+        availability,
+        updated_at,
+        organisation_id
+    )
+    SELECT
+        employee_id,
+        'ABSENT',
+        'ABSENT',
+        datetime('now'),
+        organisation_id
     FROM employees
 `).run();
 
-console.log("Database tables are ready")
-module.exports=db
+// Fix existing status records that have no organisation ID.
+db.prepare(`
+    UPDATE official_status
+    SET organisation_id = (
+        SELECT e.organisation_id
+        FROM employees e
+        WHERE e.employee_id = official_status.employee_id
+    )
+    WHERE organisation_id IS NULL
+`).run();
+
+// ============================================================
+// EMPLOYEE AVAILABILITY MONITORING
+// ============================================================
+
+db.prepare(`
+    CREATE TABLE IF NOT EXISTS employee_monitoring (
+        employee_id TEXT PRIMARY KEY,
+        organisation_id INTEGER NOT NULL,
+        started_at TEXT NOT NULL,
+        expires_at TEXT NOT NULL,
+        FOREIGN KEY (employee_id)
+            REFERENCES employees(employee_id)
+    )
+`).run();
+
+console.log("Database tables are ready");
+
+module.exports = db;

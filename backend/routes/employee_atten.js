@@ -1,252 +1,778 @@
-const express=require("express")
-const db =require("../database/database")
 
-const router =express.Router()
+const express = require("express");
+const crypto = require("node:crypto");
+const db = require("../database/database");
 
-router.post("/attendance", (req, res) => {
+const {
+    startMonitoring,
+    recognizeEmployee
+} = require("../services/employeeMonitoring");
 
-    const { employeeId, status, date, time } = req.body;
+const router = express.Router();
 
-    // Validate required fields
-    if (!employeeId || !status || !date || !time) {
-        return res.status(400).json({
-            success: false,
-            message: "employeeId, status, date and time are required."
-        });
+// ============================================================
+// CAMERA AUTHENTICATION
+// ============================================================
+
+// backend/.env example:
+// PRESENX_CAMERA_KEYS_JSON={"1":"LONG_RANDOM_KEY_FOR_ORG_1","6":"LONG_RANDOM_KEY_FOR_ORG_6"}
+
+function cameraOrganisation(req) {
+    const supplied = req.get("x-presenx-camera-key");
+
+    if (!supplied || typeof supplied !== "string") {
+        return null;
     }
 
-    // Validate attendance status
-    if (!["ENTRY", "EXIT"].includes(status)) {
-        return res.status(400).json({
-            success: false,
-            message: "Invalid attendance status."
-        });
-    }
-
-    // Check employee exists
-    const employee = db.prepare(`
-        SELECT employee_id, name
-        FROM employees
-        WHERE employee_id = ?
-    `).get(employeeId);
-
-    if (!employee) {
-        return res.status(404).json({
-            success: false,
-            message: "Employee not found."
-        });
-    }
-
-    // Check whether this type of attendance was already recorded today
-    const existing = db.prepare(`
-        SELECT id
-        FROM attendance_events
-        WHERE employee_id = ?
-        AND date = ?
-        AND status = ?
-        LIMIT 1
-    `).get(employeeId, date, status);
-
-    // Determine presence from attendance event
-    const presence = status === "ENTRY"
-        ? "PRESENT"
-        : "ABSENT";
-
-    const updatedAt = new Date().toISOString();
-
-    // Update presence even if attendance already exists
-    db.prepare(`
-        UPDATE official_status
-        SET presence = ?, updated_at = ?
-        WHERE employee_id = ?
-    `).run(
-        presence,
-        updatedAt,
-        employeeId
+    const keys = JSON.parse(
+        process.env.PRESENX_CAMERA_KEYS_JSON || "{}"
     );
 
-    // If already recorded, don't create another attendance event
-    if (existing) {
-        return res.status(200).json({
+    for (const [id, secret] of Object.entries(keys)) {
+        if (typeof secret !== "string" || secret.length < 32) {
+            continue;
+        }
+
+        const suppliedBuffer = Buffer.from(supplied);
+        const secretBuffer = Buffer.from(secret);
+
+        if (
+            suppliedBuffer.length === secretBuffer.length &&
+            crypto.timingSafeEqual(suppliedBuffer, secretBuffer)
+        ) {
+            const organisationId = Number(id);
+
+            if (
+                Number.isSafeInteger(organisationId) &&
+                organisationId > 0
+            ) {
+                return organisationId;
+            }
+        }
+    }
+
+    return null;
+}
+
+function requireCamera(req, res, next) {
+    try {
+        const organisationId = cameraOrganisation(req);
+
+        if (!organisationId) {
+            return res.status(401).json({
+                success: false,
+                message: "Camera authentication required"
+            });
+        }
+
+        req.cameraOrganisationId = organisationId;
+        next();
+
+    } catch (error) {
+        console.error("Camera authentication error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Camera configuration error"
+        });
+    }
+}
+
+function requireOrganisationAccess(req, res, next) {
+    try {
+        const suppliedCameraKey = req.get("x-presenx-camera-key");
+
+        if (suppliedCameraKey) {
+            const organisationId = cameraOrganisation(req);
+
+            if (!organisationId) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Invalid camera credentials"
+                });
+            }
+
+            req.authorisedOrganisationId = organisationId;
+            req.isCameraRequest = true;
+            return next();
+        }
+
+        const user = req.session?.user;
+
+        if (!user?.organisationId) {
+            return res.status(401).json({
+                success: false,
+                message: "Authentication required"
+            });
+        }
+
+        req.authorisedOrganisationId = Number(user.organisationId);
+        req.isCameraRequest = false;
+        next();
+
+    } catch (error) {
+        console.error("Organisation access error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Authentication configuration error"
+        });
+    }
+}
+
+// ============================================================
+// GET EMPLOYEES FOR THIS CAMERA
+// ============================================================
+
+router.get("/monitoring/employees", requireCamera, (req, res) => {
+    try {
+        const employees = db.prepare(`
+            SELECT employee_id
+            FROM employees
+            WHERE organisation_id = ?
+            ORDER BY employee_id
+        `).all(req.cameraOrganisationId);
+
+        return res.json({
             success: true,
-            message: "Attendance already recorded.",
-            attendanceId: existing.id,
-            presence: presence
+            employees
+        });
+
+    } catch (error) {
+        console.error("Camera employee list error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Unable to retrieve camera employees"
         });
     }
-
-    // Insert new attendance event
-    const result = db.prepare(`
-        INSERT INTO attendance_events
-        (employee_id, status, date, time)
-        VALUES (?, ?, ?, ?)
-    `).run(
-        employeeId,
-        status,
-        date,
-        time
-    );
-
-    res.status(201).json({
-        success: true,
-        message: "Attendance recorded successfully.",
-        attendanceId: result.lastInsertRowid,
-        employeeId: employeeId,
-        presence: presence
-    });
 });
 
+// ============================================================
+// RECORD EMPLOYEE ATTENDANCE
+// ============================================================
 
-router.get("/employees/:employeeId/attendance",(req,res)=>{
-    const employeeId=req.params.employeeId
-    const{date}=req.query
+router.post("/attendance", requireOrganisationAccess, (req, res) => {
+    try {
+        const { employeeId, status, date, time } = req.body;
+        const organisationId = req.authorisedOrganisationId;
 
-    const employee = db.prepare(`
-        SELECT employee_id, name, designation
-        FROM employees
-        WHERE employee_id = ?
-    `).get(employeeId);
-    
-    // Check whether employee exists
-    if (!employee) {
+        if (!employeeId || !status || !date || !time) {
+            return res.status(400).json({
+                success: false,
+                message: "employeeId, status, date and time are required."
+            });
+        }
 
-        return res.status(404).json({
-            success: false,
-            message: "Employee not found."
-        });
-    }
+        if (!["ENTRY", "EXIT"].includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid attendance status."
+            });
+        }
 
-    let attendance
+        if (
+            !req.isCameraRequest &&
+            req.session?.user?.role === "official" &&
+            req.session.user.employeeId !== employeeId
+        ) {
+            return res.status(403).json({
+                success: false,
+                message: "Cannot record another employee's attendance"
+            });
+        }
 
-    if (date){
-        attendance = db.prepare(`
-            SELECT id, status, date, time
+        const employee = db.prepare(`
+            SELECT employee_id, name, organisation_id
+            FROM employees
+            WHERE employee_id = ?
+              AND organisation_id = ?
+        `).get(employeeId, organisationId);
+
+        if (!employee) {
+            return res.status(404).json({
+                success: false,
+                message: "Employee not found."
+            });
+        }
+
+        const existing = db.prepare(`
+            SELECT id
             FROM attendance_events
             WHERE employee_id = ?
-            AND date = ?
-            ORDER BY time ASC
-        `).all(employeeId, date);
-    }
-    else{
-        attendance = db.prepare(`
-            SELECT id, status, date, time
-            FROM attendance_events
-            WHERE employee_id = ?
+              AND organisation_id = ?
+              AND date = ?
+              AND status = ?
+            LIMIT 1
+        `).get(employeeId, organisationId, date, status);
 
-            AND date >= date(
-                'now',
-                '-' || (
-                    (CAST(strftime('%w', 'now') AS INTEGER) + 6) % 7
-                ) || ' days'
-            )
+        const presence = status === "ENTRY"
+            ? "PRESENT"
+            : "ABSENT";
 
-            AND date <= date('now')
+        const updatedAt = new Date().toISOString();
 
-            ORDER BY date ASC, time ASC
-        `).all(employeeId);
-    }
+        const updateStatus = db.transaction(() => {
+            if (status === "EXIT") {
+                db.prepare(`
+                    UPDATE official_status
+                    SET presence = 'ABSENT',
+                        availability = 'ABSENT',
+                        updated_at = ?
+                    WHERE employee_id = ?
+                      AND organisation_id = ?
+                `).run(updatedAt, employeeId, organisationId);
 
-     // Send employee and attendance data
-    res.json({
-        success: true,
-        employee: employee,
-        attendance: attendance
-    });
-})
- 
-// Get current official status
-router.get("/employees/:employeeId/status", (req, res) => {
-    const employeeId = req.params.employeeId;
+            } else {
+                db.prepare(`
+                    UPDATE official_status
+                    SET presence = 'PRESENT',
+                        availability = CASE
+                            WHEN availability = 'ON OFFICIAL DUTY'
+                            THEN 'ON OFFICIAL DUTY'
+                            ELSE 'AVAILABLE'
+                        END,
+                        updated_at = ?
+                    WHERE employee_id = ?
+                      AND organisation_id = ?
+                `).run(updatedAt, employeeId, organisationId);
+            }
 
-    const status = db.prepare(`
-        SELECT
-            employee_id,
-            presence,
-            availability,
-            updated_at
-        FROM official_status
-        WHERE employee_id = ?
-    `).get(employeeId);
+            db.prepare(`
+                DELETE FROM employee_monitoring
+                WHERE employee_id = ?
+                  AND organisation_id = ?
+            `).run(employeeId, organisationId);
 
-    if (!status) {
-        return res.status(404).json({
+            if (existing) {
+                return {
+                    attendanceId: existing.id,
+                    alreadyRecorded: true
+                };
+            }
+
+            const result = db.prepare(`
+                INSERT INTO attendance_events
+                    (employee_id, organisation_id, status, date, time)
+                VALUES (?, ?, ?, ?, ?)
+            `).run(
+                employeeId,
+                organisationId,
+                status,
+                date,
+                time
+            );
+
+            return {
+                attendanceId: result.lastInsertRowid,
+                alreadyRecorded: false
+            };
+        })();
+
+        return res.status(
+            updateStatus.alreadyRecorded ? 200 : 201
+        ).json({
+            success: true,
+            message: updateStatus.alreadyRecorded
+                ? "Attendance already recorded."
+                : "Attendance recorded successfully.",
+            attendanceId: updateStatus.attendanceId,
+            employeeId,
+            presence
+        });
+
+    } catch (error) {
+        console.error("Attendance error:", error);
+
+        return res.status(500).json({
             success: false,
-            message: "Official status not found."
+            message: "Unable to record attendance"
         });
     }
-
-    res.json({
-        success: true,
-        status: status
-    });
 });
 
-// Update official availability
-router.put("/employees/:employeeId/status", (req, res) => {
-    const employeeId = req.params.employeeId;
-    const { availability } = req.body;
+// ============================================================
+// GET EMPLOYEE ATTENDANCE HISTORY
+// ============================================================
 
-    const allowedStatuses = [
-        "AVAILABLE",
-        "TEMPORARILY UNAVAILABLE",
-        "ON OFFICIAL DUTY"
-    ];
+router.get(
+    "/employees/:employeeId/attendance",
+    requireOrganisationAccess,
+    (req, res) => {
+        try {
+            const employeeId = req.params.employeeId;
+            const organisationId = req.authorisedOrganisationId;
+            const { date } = req.query;
 
-    if (!allowedStatuses.includes(availability)) {
-        return res.status(400).json({
+            if (
+                !req.isCameraRequest &&
+                req.session?.user?.role === "official" &&
+                req.session.user.employeeId !== employeeId
+            ) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Access denied"
+                });
+            }
+
+            const employee = db.prepare(`
+                SELECT employee_id, name, designation
+                FROM employees
+                WHERE employee_id = ?
+                  AND organisation_id = ?
+            `).get(employeeId, organisationId);
+
+            if (!employee) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Employee not found."
+                });
+            }
+
+            let attendance;
+
+            if (date) {
+                attendance = db.prepare(`
+                    SELECT id, status, date, time
+                    FROM attendance_events
+                    WHERE employee_id = ?
+                      AND organisation_id = ?
+                      AND date = ?
+                    ORDER BY time ASC
+                `).all(employeeId, organisationId, date);
+
+            } else {
+                attendance = db.prepare(`
+                    SELECT id, status, date, time
+                    FROM attendance_events
+                    WHERE employee_id = ?
+                      AND organisation_id = ?
+                      AND date >= date(
+                          'now',
+                          '-' || (
+                              (CAST(strftime('%w', 'now') AS INTEGER) + 6) % 7
+                          ) || ' days'
+                      )
+                      AND date <= date('now')
+                    ORDER BY date ASC, time ASC
+                `).all(employeeId, organisationId);
+            }
+
+            return res.json({
+                success: true,
+                employee,
+                attendance
+            });
+
+        } catch (error) {
+            console.error("Attendance history error:", error);
+
+            return res.status(500).json({
+                success: false,
+                message: "Unable to retrieve attendance"
+            });
+        }
+    }
+);
+
+// ============================================================
+// GET CURRENT OFFICIAL STATUS
+// ============================================================
+
+router.get(
+    "/employees/:employeeId/status",
+    requireOrganisationAccess,
+    (req, res) => {
+        try {
+            const employeeId = req.params.employeeId;
+            const organisationId = req.authorisedOrganisationId;
+
+            const status = db.prepare(`
+                SELECT employee_id, presence, availability, updated_at
+                FROM official_status
+                WHERE employee_id = ?
+                  AND organisation_id = ?
+            `).get(employeeId, organisationId);
+
+            if (!status) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Official status not found."
+                });
+            }
+
+            return res.json({
+                success: true,
+                status
+            });
+
+        } catch (error) {
+            console.error("Official status error:", error);
+
+            return res.status(500).json({
+                success: false,
+                message: "Unable to retrieve status"
+            });
+        }
+    }
+);
+
+// ============================================================
+// MANUALLY UPDATE OFFICIAL AVAILABILITY
+// ============================================================
+
+router.put(
+    "/employees/:employeeId/status",
+    requireOrganisationAccess,
+    (req, res) => {
+        try {
+            const employeeId = req.params.employeeId;
+            const organisationId = req.authorisedOrganisationId;
+            const { availability } = req.body;
+
+            const user = req.session?.user;
+
+            if (
+                !user ||
+                (
+                    user.role !== "admin" &&
+                    user.employeeId !== employeeId
+                )
+            ) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Not allowed to update status"
+                });
+            }
+
+            const allowedStatuses = [
+                "AVAILABLE",
+                "TEMPORARILY UNAVAILABLE",
+                "ON OFFICIAL DUTY",
+                "ABSENT"
+            ];
+
+            if (!allowedStatuses.includes(availability)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid availability status."
+                });
+            }
+
+            const employee = db.prepare(`
+                SELECT employee_id
+                FROM official_status
+                WHERE employee_id = ?
+                  AND organisation_id = ?
+            `).get(employeeId, organisationId);
+
+            if (!employee) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Official status not found."
+                });
+            }
+
+            const updatedAt = new Date().toISOString();
+
+            db.transaction(() => {
+                db.prepare(`
+                    UPDATE official_status
+                    SET availability = ?,
+                        presence = CASE
+                            WHEN ? = 'ABSENT'
+                            THEN 'ABSENT'
+                            ELSE 'PRESENT'
+                        END,
+                        updated_at = ?
+                    WHERE employee_id = ?
+                      AND organisation_id = ?
+                `).run(
+                    availability,
+                    availability,
+                    updatedAt,
+                    employeeId,
+                    organisationId
+                );
+
+                db.prepare(`
+                    DELETE FROM employee_monitoring
+                    WHERE employee_id = ?
+                      AND organisation_id = ?
+                `).run(employeeId, organisationId);
+            })();
+
+            return res.json({
+                success: true,
+                message: "Availability updated successfully.",
+                availability,
+                updated_at: updatedAt
+            });
+
+        } catch (error) {
+            console.error("Manual availability error:", error);
+
+            return res.status(500).json({
+                success: false,
+                message: "Unable to update availability"
+            });
+        }
+    }
+);
+
+// ============================================================
+// GET TODAY'S ATTENDANCE
+// ============================================================
+
+router.get("/attendance", requireOrganisationAccess, (req, res) => {
+    try {
+        const { date } = req.query;
+        const organisationId = req.authorisedOrganisationId;
+
+        const attendanceDate =
+            date || new Date().toISOString().slice(0, 10);
+
+        const attendance = db.prepare(`
+            SELECT
+                a.id,
+                a.employee_id,
+                e.name,
+                a.status,
+                a.date,
+                a.time
+            FROM attendance_events a
+            JOIN employees e
+                ON a.employee_id = e.employee_id
+            WHERE a.date = ?
+              AND e.organisation_id = ?
+              AND (
+                  a.organisation_id = ?
+                  OR a.organisation_id IS NULL
+              )
+            ORDER BY a.time ASC
+        `).all(
+            attendanceDate,
+            organisationId,
+            organisationId
+        );
+
+        return res.json({
+            success: true,
+            attendance
+        });
+
+    } catch (error) {
+        console.error("Today's attendance error:", error);
+
+        return res.status(500).json({
             success: false,
-            message: "Invalid availability status."
+            message: "Unable to retrieve today's attendance"
         });
     }
+});
 
-    const updatedAt = new Date().toISOString();
+// ============================================================
+// CAMERA: EMPLOYEE RECOGNIZED
+// ============================================================
 
-    const result = db.prepare(`
-        UPDATE official_status
-        SET availability = ?, updated_at = ?
-        WHERE employee_id = ?
-    `).run(availability, updatedAt, employeeId);
+router.post(
+    "/monitoring/recognized",
+    requireCamera,
+    (req, res) => {
+        try {
+            const { employeeId } = req.body;
+            const organisationId = req.cameraOrganisationId;
 
-    if (result.changes === 0) {
-        return res.status(404).json({
-            success: false,
-            message: "Official status not found."
-        });
+            if (
+                typeof employeeId !== "string" ||
+                !employeeId.trim()
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Valid employeeId required."
+                });
+            }
+
+            const restored = recognizeEmployee(
+                employeeId,
+                organisationId
+            );
+
+            return res.json({
+                success: true,
+                restored
+            });
+
+        } catch (error) {
+            console.error("Recognition monitoring error:", error);
+
+            return res.status(500).json({
+                success: false,
+                message: "Unable to update recognition status"
+            });
+        }
     }
+);
 
-    res.json({
-        success: true,
-        message: "Availability updated successfully.",
-        availability: availability,
-        updated_at: updatedAt
-    });
-});
+// ============================================================
+// CAMERA: VALID EMPTY SESSION
+// ============================================================
 
-router.get("/attendance", (req, res) => {
+router.post(
+    "/monitoring/empty-session",
+    requireCamera,
+    (req, res) => {
+        try {
+            const organisationId = req.cameraOrganisationId;
 
-    const { date } = req.query;
+            const employees = db.prepare(`
+                SELECT e.employee_id
+                FROM employees e
+                JOIN official_status s
+                    ON s.employee_id = e.employee_id
+                   AND s.organisation_id = e.organisation_id
+                WHERE e.organisation_id = ?
+                  AND s.presence = 'PRESENT'
+                  AND s.availability IN (
+                      'AVAILABLE',
+                      'TEMPORARILY UNAVAILABLE'
+                  )
+            `).all(organisationId);
 
-    const attendanceDate = date || new Date().toISOString().slice(0, 10);
+            let started = 0;
 
-    const attendance = db.prepare(`
-        SELECT
-            a.id,
-            a.employee_id,
-            e.name,
-            a.status,
-            a.date,
-            a.time
-        FROM attendance_events a
-        JOIN employees e
-            ON a.employee_id = e.employee_id
-        WHERE a.date = ?
-        ORDER BY a.time ASC
-    `).all(attendanceDate);
+            for (const employee of employees) {
+                if (
+                    startMonitoring(
+                        employee.employee_id,
+                        organisationId
+                    )
+                ) {
+                    started++;
+                }
+            }
 
-    res.json({
-        success: true,
-        attendance: attendance
-    });
-});
+            return res.json({
+                success: true,
+                eligibleEmployees: employees.length,
+                timersStarted: started
+            });
 
-module.exports=router
+        } catch (error) {
+            console.error("Empty-session monitoring error:", error);
+
+            return res.status(500).json({
+                success: false,
+                message: "Unable to process monitoring session"
+            });
+        }
+    }
+);
+
+// ============================================================
+// CAMERA: COMPLETE RECOGNITION SESSION
+// ============================================================
+
+router.post(
+    "/monitoring/session-result",
+    requireCamera,
+    (req, res) => {
+        try {
+            const { recognizedEmployeeIds } = req.body;
+            const organisationId = req.cameraOrganisationId;
+
+            if (
+                !Array.isArray(recognizedEmployeeIds) ||
+                !recognizedEmployeeIds.every(
+                    id => typeof id === "string" && id.trim()
+                )
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid monitoring session data."
+                });
+            }
+
+            const recognized = new Set(recognizedEmployeeIds);
+
+            // Reject employee IDs belonging to other organizations.
+            for (const employeeId of recognized) {
+                const member = db.prepare(`
+                    SELECT 1
+                    FROM employees
+                    WHERE employee_id = ?
+                      AND organisation_id = ?
+                `).get(employeeId, organisationId);
+
+                if (!member) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Employee not assigned to this camera"
+                    });
+                }
+            }
+
+            let monitoringStarted = 0;
+            let availabilityRestored = 0;
+
+            db.transaction(() => {
+                const employees = db.prepare(`
+                    SELECT e.employee_id
+                    FROM employees e
+                    JOIN official_status s
+                        ON s.employee_id = e.employee_id
+                       AND s.organisation_id = e.organisation_id
+                    WHERE e.organisation_id = ?
+                      AND s.presence = 'PRESENT'
+                      AND s.availability IN (
+                          'AVAILABLE',
+                          'TEMPORARILY UNAVAILABLE'
+                      )
+                `).all(organisationId);
+
+                // Recognized employees become AVAILABLE.
+                for (const employeeId of recognized) {
+                    if (
+                        recognizeEmployee(
+                            employeeId,
+                            organisationId
+                        )
+                    ) {
+                        availabilityRestored++;
+                    }
+                }
+
+                // Missing PRESENT employees start monitoring.
+                for (const employee of employees) {
+                    if (!recognized.has(employee.employee_id)) {
+                        if (
+                            startMonitoring(
+                                employee.employee_id,
+                                organisationId
+                            )
+                        ) {
+                            monitoringStarted++;
+                        }
+                    }
+                }
+            })();
+
+            return res.json({
+                success: true,
+                recognizedCount: recognized.size,
+                availabilityRestored,
+                monitoringStarted
+            });
+
+        } catch (error) {
+            console.error("Session monitoring error:", error);
+
+            return res.status(500).json({
+                success: false,
+                message: "Unable to process recognition session"
+            });
+        }
+    }
+);
+
+module.exports = router;

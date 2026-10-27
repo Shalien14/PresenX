@@ -1,3 +1,4 @@
+
 import os
 import cv2
 import numpy as np
@@ -7,8 +8,31 @@ import requests
 from datetime import datetime, date
 from pathlib import Path
 from insightface.app import FaceAnalysis
+from dotenv import load_dotenv
 
+load_dotenv(Path(__file__).resolve().parent / ".env")
 API_BASE_URL = "http://localhost:5001/api"
+CAMERA_KEY = os.getenv("PRESENX_CAMERA_KEY", "").strip()
+CAMERA_HEADERS = {"x-presenx-camera-key": CAMERA_KEY}
+MIN_SESSION_SECONDS = 10  # Avoid interpreting an immediate q press as an empty room.
+
+
+# Availability reporting is opt-in until monitoring endpoints are authenticated.
+# Set PRESENX_ORGANISATION_ID to the ID of the organization served by this camera.
+# Set PRESENX_AVAILABILITY_ENABLED=true only after local integration testing.
+AVAILABILITY_ENABLED = os.getenv("PRESENX_AVAILABILITY_ENABLED", "false").lower() == "true"
+ORGANISATION_ID_RAW = os.getenv("PRESENX_ORGANISATION_ID", "").strip()
+try:
+    ORGANISATION_ID = int(ORGANISATION_ID_RAW)
+    if ORGANISATION_ID <= 0:
+        raise ValueError("organisation ID must be positive")
+except ValueError:
+    ORGANISATION_ID = None
+
+if ORGANISATION_ID is None:
+    raise RuntimeError("Set PRESENX_ORGANISATION_ID for this camera")
+if not CAMERA_KEY:
+    raise RuntimeError("Set PRESENX_CAMERA_KEY for this camera")
 
 # ============================================================
 # PATHS (matched to your PresenX structure)
@@ -164,6 +188,34 @@ def mark_attendance(
 
     return True
 
+def get_camera_employee_ids():
+    """Fetch the employee IDs authorized for this camera by its secret key."""
+    try:
+        response = requests.get(
+            f"{API_BASE_URL}/monitoring/employees",
+            headers=CAMERA_HEADERS,
+            timeout=5
+        )
+        response.raise_for_status()
+        result = response.json()
+        if not result.get("success") or not isinstance(result.get("employees"), list):
+            raise ValueError("Invalid camera employee response")
+        return {row["employee_id"] for row in result["employees"]}
+    except (requests.RequestException, ValueError, KeyError, TypeError) as error:
+        print(f"[CAMERA ERROR] Cannot retrieve organization employees: {error}")
+        return None
+
+
+def today_present_ids(rows):
+    """Count unique employees whose latest attendance event today is ENTRY."""
+    latest = {}
+    for row in rows:
+        employee_id = row.get("employee_id")
+        if employee_id:
+            latest[employee_id] = row.get("status")
+    return {employee_id for employee_id, status in latest.items() if status == "ENTRY"}
+
+
 def get_today_attendance():
     today = date.today().isoformat()
 
@@ -171,6 +223,7 @@ def get_today_attendance():
         response = requests.get(
             f"{API_BASE_URL}/attendance",
             params={"date": today},
+            headers=CAMERA_HEADERS,
             timeout=5
         )
 
@@ -244,6 +297,7 @@ def send_attendance(employee_id, status="ENTRY"):
         response = requests.post(
             f"{API_BASE_URL}/attendance",
             json=payload,
+            headers=CAMERA_HEADERS,
             timeout=5
         )
 
@@ -270,6 +324,32 @@ def send_attendance(employee_id, status="ENTRY"):
         )
         return False
 
+
+def report_session_result(organisation_id, recognized_ids):
+    """Submit the confirmed IDs from a completed, valid camera session."""
+    try:
+        response = requests.post(
+            f"{API_BASE_URL}/monitoring/session-result",
+            json={
+                "recognizedEmployeeIds": sorted(recognized_ids)
+            },
+            headers=CAMERA_HEADERS,
+            timeout=5
+        )
+        response.raise_for_status()
+        result = response.json()
+        print(
+            "[MONITORING] Session submitted | "
+            f"Recognized: {result.get('recognizedCount', 0)} | "
+            f"Restored: {result.get('availabilityRestored', 0)} | "
+            f"New timers: {result.get('monitoringStarted', 0)}"
+        )
+        return True
+    except (requests.RequestException, ValueError) as error:
+        print(f"[MONITORING ERROR] Session report failed: {error}")
+        return False
+
+
 # ============================================================
 # MAIN LOOP
 # ============================================================
@@ -277,6 +357,17 @@ def send_attendance(employee_id, status="ENTRY"):
 def main():
     # Set force_rebuild=True if you want to completely rebuild the database
     known_database = load_or_build_database(force_rebuild=False)
+
+    authorized_ids = get_camera_employee_ids()
+    if authorized_ids is None:
+        print("[CAMERA] Startup cancelled: cannot verify organization membership.")
+        return
+    known_database = {
+        employee_id: embeddings
+        for employee_id, embeddings in known_database.items()
+        if employee_id in authorized_ids
+    }
+    print(f"[CAMERA] Organization {ORGANISATION_ID}: {len(authorized_ids)} registered employees")
 
     if not known_database:
         print("No known faces found. Add photos to Known_faces/ and restart.")
@@ -320,11 +411,20 @@ def main():
     attendance_recorded = set()
     attendance_count = 0
     last_attendance_refresh = 0
+    # Employees reliably recognized during this camera session
+    session_recognized_employees = set()
+    # Camera session monitoring
+    valid_frames_processed = 0
+    camera_failed = False
+    processing_failed = False
+    session_completed_normally = False
+    session_started_at = datetime.now().timestamp()
 
     while True:
         ret, frame = cap.read()
         if not ret:
             print("ERROR: Failed to read frame from webcam.")
+            camera_failed=True
             break
 
         frame_count += 1
@@ -333,7 +433,13 @@ def main():
         if frame_count % PROCESS_EVERY_N_FRAMES == 0:
             cached_faces.clear()
             small = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
-            faces = app.get(small)
+            try:
+                faces = app.get(small)
+            except Exception as error:
+                print(f"[MONITORING ERROR] Face processing failed: {error}")
+                processing_failed = True
+                break
+            valid_frames_processed += 1
 
             current_employee_ids = set()
 
@@ -354,7 +460,7 @@ def main():
                     )
 
                     if confirmation_counter[employee_id] >= CONFIRMATION_FRAMES:
-
+                        session_recognized_employees.add(employee_id)
                         if employee_id not in attendance_recorded:
 
                             success = mark_attendance(
@@ -391,7 +497,7 @@ def main():
         current_time = datetime.now().timestamp()
 
         if current_time - last_attendance_refresh >= 5:
-            attendance_count = len(get_today_attendance())
+            attendance_count = len(today_present_ids(get_today_attendance()))
             last_attendance_refresh = current_time
             
         cv2.putText(display, f"Today: {attendance_count} present  |  Press 'a'",
@@ -401,6 +507,7 @@ def main():
 
         key = cv2.waitKey(1) & 0xFF
         if key == ord("q"):
+            session_completed_normally = True
             break
         elif key == ord("a"):
             print("\n===== Today's Attendance =====")
@@ -415,6 +522,19 @@ def main():
                         f"{r['status']}"
                     )
             print("==============================\n")
+
+    if camera_failed or processing_failed or valid_frames_processed == 0:
+        print("[MONITORING] Invalid session. Availability unchanged.")
+    elif not session_completed_normally:
+        print("[MONITORING] Session interrupted. Availability unchanged.")
+    elif datetime.now().timestamp() - session_started_at < MIN_SESSION_SECONDS:
+        print("[MONITORING] Session too short. Availability unchanged.")
+    else:
+        print("[MONITORING] Recognized employees:", sorted(session_recognized_employees))
+        if AVAILABILITY_ENABLED:
+            report_session_result(ORGANISATION_ID, session_recognized_employees)
+        else:
+            print("[MONITORING] Availability reporting disabled.")
 
     cap.release()
     cv2.destroyAllWindows()

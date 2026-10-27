@@ -29,51 +29,41 @@ function requireManager(req, res, next) {
 // ==========================================
 // GET ALL EMPLOYEES
 // ==========================================
+
 router.get("/", (req, res) => {
     try {
+        const user = req.session?.user;
 
-        const organisationId = req.query.organisationId;
-
-        let employees;
-
-        if (organisationId) {
-            employees = db.prepare(`
-                SELECT
-                    e.employee_id,
-                    e.name,
-                    e.designation,
-                    e.department,
-                    e.room,
-                    COALESCE(s.presence, 'ABSENT') AS presence,
-                    COALESCE(s.availability, 'AVAILABLE') AS availability,
-                    COALESCE(s.updated_at, datetime('now')) AS updated_at
-                FROM employees e
-                LEFT JOIN official_status s
-                    ON s.employee_id = e.employee_id
-                    AND s.organisation_id = e.organisation_id
-                WHERE e.organisation_id = ?
-                ORDER BY e.employee_id
-            `).all(organisationId);
-        } else {
-            employees = db.prepare(`
-                SELECT
-                    e.employee_id,
-                    e.name,
-                    e.designation,
-                    e.department,
-                    e.room,
-                    COALESCE(s.presence, 'ABSENT') AS presence,
-                    COALESCE(s.availability, 'AVAILABLE') AS availability,
-                    COALESCE(s.updated_at, datetime('now')) AS updated_at
-                FROM employees e
-                LEFT JOIN official_status s
-                    ON s.employee_id = e.employee_id
-                    AND s.organisation_id = e.organisation_id
-                ORDER BY e.employee_id
-            `).all();
+        if (!user || !user.organisationId) {
+            return res.status(401).json({
+                success: false,
+                error: "Login required"
+            });
         }
 
-        res.json({
+        // Organization comes from the authenticated session,
+        // never from a user-supplied query parameter.
+        const organisationId = user.organisationId;
+
+        const employees = db.prepare(`
+            SELECT
+                e.employee_id,
+                e.name,
+                e.designation,
+                e.department,
+                e.room,
+                COALESCE(s.presence, 'ABSENT') AS presence,
+                COALESCE(s.availability, 'AVAILABLE') AS availability,
+                COALESCE(s.updated_at, datetime('now')) AS updated_at
+            FROM employees e
+            LEFT JOIN official_status s
+                ON s.employee_id = e.employee_id
+                AND s.organisation_id = e.organisation_id
+            WHERE e.organisation_id = ?
+            ORDER BY e.employee_id
+        `).all(organisationId);
+
+        return res.json({
             success: true,
             employees
         });
@@ -81,12 +71,13 @@ router.get("/", (req, res) => {
     } catch (error) {
         console.error("Error fetching employees:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
-            error: error.message
+            error: "Failed to fetch employees"
         });
     }
 });
+
 
 
 // ==========================================
