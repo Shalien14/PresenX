@@ -189,7 +189,7 @@ while true; do
         1)
             start_backend
             start_flask
-            start_engine
+            
             echo
             echo "All requested services have been launched."
             echo "Select option 3 only if you want to restart/start the camera engine separately."
