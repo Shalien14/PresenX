@@ -6,6 +6,7 @@ const cors = require("cors");
 const path = require("path");
 
 const db = require("./database/database");
+const adminRoutes = require("./routes/adminRoutes");
 
 const attendenceRoute = require("./routes/employee_atten");
 const employeeRoutes = require("./routes/employee");
@@ -68,6 +69,8 @@ app.use("/api",organisationRoutes);
 app.use("/api",notificationsRoutes)
 
 app.use("/api/auth", authRoutes);
+
+app.use("/api/admin", adminRoutes);
 
 // SERVER
 app.listen(5001, () => {

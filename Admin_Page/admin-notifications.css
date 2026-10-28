@@ -208,3 +208,22 @@ body {
     background: #fee2e2;
     color: #991b1b;
 }
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+#logoutBtn {
+    padding: 10px 18px;
+    background-color: #dc2626;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+#logoutBtn:hover {
+    background-color: #b91c1c;
+}

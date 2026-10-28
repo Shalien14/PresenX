@@ -7,6 +7,37 @@ const urlParams = new URLSearchParams(
     window.location.search
 );
 
+// CHECK ADMIN SESSION
+async function checkAdminSession() {
+    try {
+        const response = await fetch(
+            `${API_BASE_URL}/admin/me`,
+            {
+                credentials: "include"
+            }
+        );
+
+        if (!response.ok) {
+            window.location.replace("admin-login.html");
+            return false;
+        }
+
+        const result = await response.json();
+
+        if (!result.authenticated) {
+            window.location.replace("admin-login.html");
+            return false;
+        }
+
+        return true;
+
+    } catch (error) {
+        console.error("Session check failed:", error);
+        window.location.replace("admin-login.html");
+        return false;
+    }
+}
+
 const requestId = urlParams.get("id");
 
 
@@ -108,7 +139,12 @@ async function loadOrganisation() {
 
 
 // Load organisation when page opens
-loadOrganisation();
+// Load organisation details only after admin authentication
+checkAdminSession().then((authenticated) => {
+    if (authenticated) {
+        loadOrganisation();
+    }
+});
 
 // GO BACK TO NOTIFICATION PAGE
 

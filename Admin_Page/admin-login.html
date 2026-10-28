@@ -347,42 +347,78 @@ label {
    </section>
   </main>
   <script>
-   const form = document.getElementById('loginForm');
-const toggle = document.getElementById('togglePassword');
-const pass = document.getElementById('password');
-const message = document.getElementById('message');
-const submit = document.getElementById('submitBtn');
+    
+   
+const form = document.getElementById("loginForm");
+const toggle = document.getElementById("togglePassword");
+const pass = document.getElementById("password");
+const usernameInput = document.getElementById("username");
+const submitBtn = document.getElementById("submitBtn");
+const message = document.getElementById("message");
 
-toggle.addEventListener('click', () => {
-    const show = pass.type === 'password';
-    pass.type = show ? 'text' : 'password';
-    toggle.textContent = show ? 'Hide' : 'Show';
-    toggle.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+toggle.addEventListener("click", () => {
+    const show = pass.type === "password";
+
+    pass.type = show ? "text" : "password";
+    toggle.textContent = show ? "Hide" : "Show";
+
+    toggle.setAttribute(
+        "aria-label",
+        show ? "Hide password" : "Show password"
+    );
 });
 
-form.addEventListener('submit', async (e) => {
+form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    message.textContent = '';
+    message.textContent = "";
 
     if (!form.reportValidity()) return;
 
-    submit.disabled = true;
-    submit.textContent = 'Checking credentials…';
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Checking credentials…";
 
     try {
-        // FRONTEND DEMO ONLY: Replace this block with your existing
-        // PresenX administrator authentication endpoint.
-        // POST using fetch with credentials: 'same-origin', verify the
-        // server-confirmed administrator role, then redirect.
-        message.textContent =
-            'Login interface ready. Connect it to the existing PresenX administrator authentication API.';
+        const response = await fetch("http://localhost:5001/api/admin/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "same-origin",
+            body: JSON.stringify({
+                username: usernameInput.value,
+                password: pass.value
+            })
+        });
+
+       const responseText = await response.text();
+
+console.log("HTTP status:", response.status);
+console.log("Response content type:",
+    response.headers.get("content-type"));
+console.log("Response body:", responseText);
+
+const result = JSON.parse(responseText);
+
+        if (!response.ok || !result.success) {
+            throw new Error(
+                result.message || "Unable to sign in."
+            );
+        }
+
+        // The server session cookie authenticates future requests.
+        // sessionStorage is not used as an authentication mechanism.
+        window.location.href = "admin-notifications.html";
+
     } catch (err) {
-        message.textContent = 'Unable to sign in. Please try again.';
+        message.textContent =
+            err.message || "Unable to sign in.";
     } finally {
-        submit.disabled = false;
-        submit.textContent = 'Sign in to Admin Panel →';
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Sign in to Admin Panel →";
     }
 });
+
+
   </script>
  </body>
 </html>

@@ -27,8 +27,11 @@ async function loadNotifications(status = "pending") {
         container.textContent = "Loading requests...";
 
         const response = await fetch(
-            `${API_BASE_URL}/notification?status=${status}`
-        );
+    `${API_BASE_URL}/notification?status=${status}`,
+    {
+        credentials: "include"
+    }
+);
 
         if (!response.ok) {
             throw new Error("Failed to load requests.");
@@ -174,4 +177,71 @@ function openRequest(requestId) {
 
 
 // Initially show pending requests
-loadNotifications();
+// Check admin session before loading notifications
+async function checkAdminSession() {
+    try {
+        const response = await fetch(
+            `${API_BASE_URL}/admin/me`,
+            {
+                credentials: "include"
+            }
+        );
+
+        if (!response.ok) {
+            window.location.replace("admin-login.html");
+            return false;
+        }
+
+        const result = await response.json();
+
+        if (!result.authenticated) {
+            window.location.replace("admin-login.html");
+            return false;
+        }
+
+        return true;
+
+    } catch (error) {
+        console.error("Session check failed:", error);
+        window.location.replace("admin-login.html");
+        return false;
+    }
+}
+
+// ADMIN LOGOUT
+console.log("Logout button:", document.getElementById("logoutBtn"));
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+    const confirmed = confirm("Are you sure you want to log out?");
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            `${API_BASE_URL}/admin/logout`,
+            {
+                method: "POST",
+                credentials: "include"
+            }
+        );
+
+        if (!response.ok) {
+            alert("Unable to log out. Please try again.");
+            return;
+        }
+
+        window.location.replace("admin-login.html");
+
+    } catch (error) {
+        console.error("Logout error:", error);
+        alert("Unable to contact the server. Please try again.");
+    }
+});
+
+// Load notifications only after authentication succeeds
+checkAdminSession().then((authenticated) => {
+    if (authenticated) {
+        loadNotifications();
+    }
+});
