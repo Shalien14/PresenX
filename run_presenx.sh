@@ -26,12 +26,15 @@ NODE="$ROOT_DIR/backend/node_modules/.bin/../node_modules/node/bin/node"
 BACKEND_DIR="$ROOT_DIR/backend"
 APP="$ROOT_DIR/app.py"
 ENGINE="$ROOT_DIR/Recognition/attendance_engine.py"
+SERVER_IP="$ROOT_DIR/hardware/server_ip.py"
+
 
 LOG_DIR="$ROOT_DIR/logs"
 
 BACKEND_PID=""
 FLASK_PID=""
 ENGINE_PID=""
+SERVER_IP_PID=""
 
 mkdir -p "$LOG_DIR"
 
@@ -49,7 +52,7 @@ if [[ ! -x "$PYTHON" ]]; then
     exit 1
 fi
 
-if [[ ! -f "$BACKEND_DIR/server.js" || ! -f "$APP" || ! -f "$ENGINE" ]]; then
+if [[ ! -f "$BACKEND_DIR/server.js" || ! -f "$APP" || ! -f "$ENGINE" || ! -f "$SERVER_IP" ]]; then
     echo "ERROR: One or more PresenX entry-point files are missing."
     exit 1
 fi
@@ -131,6 +134,40 @@ start_engine() {
     fi
 }
 
+
+start_server_ip() {
+    if is_running "$SERVER_IP_PID"; then
+        echo "ESP32 server is already running."
+        return
+    fi
+
+    if [[ ! -f "$SERVER_IP" ]]; then
+        echo "ERROR: server_ip.py not found at:"
+        echo "$SERVER_IP"
+        return
+    fi
+
+    echo "Starting ESP32 server..."
+
+    (
+        cd "$ROOT_DIR" || exit 1
+        exec "$PYTHON" "$SERVER_IP"
+    ) >> "$LOG_DIR/server_ip.log" 2>&1 &
+
+    SERVER_IP_PID=$!
+    sleep 2
+
+    if is_running "$SERVER_IP_PID"; then
+        echo "ESP32 server process started (PID $SERVER_IP_PID)."
+        echo "Output is in logs/server_ip.log"
+    else
+        SERVER_IP_PID=""
+        echo "ESP32 server failed to start."
+        echo "Check logs/server_ip.log"
+    fi
+}
+
+
 stop_process() {
     local pid="$1"
     local name="$2"
@@ -152,17 +189,21 @@ stop_process() {
     fi
 }
 
+
 stop_all() {
     stop_process "$ENGINE_PID" "Attendance engine"
+    stop_process "$SERVER_IP_PID" "ESP32 server"
     stop_process "$FLASK_PID" "Flask service"
     stop_process "$BACKEND_PID" "Express backend"
 
     ENGINE_PID=""
+    SERVER_IP_PID=""
     FLASK_PID=""
     BACKEND_PID=""
 
     echo "PresenX processes stopped."
 }
+
 
 cleanup() {
     echo
@@ -189,7 +230,8 @@ while true; do
         1)
             start_backend
             start_flask
-            
+            start_server_ip
+
             echo
             echo "All requested services have been launched."
             echo "Select option 3 only if you want to restart/start the camera engine separately."
@@ -197,6 +239,7 @@ while true; do
         2)
             start_backend
             start_flask
+            start_server_ip
             ;;
         3)
             start_engine
