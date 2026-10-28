@@ -3,7 +3,63 @@ const db =require("../database/database")
 
 const router =express.Router()
 
+function updateExpiredEmployees() {
+
+    const rows = db.prepare(`
+        SELECT *
+        FROM official_status
+        WHERE availability =
+        'TEMPORARILY UNAVAILABLE'
+    `).all();
+
+    const now = new Date();
+
+    rows.forEach(row => {
+
+        if (!row.last_exit_time) {
+            return;
+        }
+
+        const exitTime =
+            new Date(row.last_exit_time);
+
+        const elapsedHours =
+            (now - exitTime) /
+            (1000 * 60 );
+
+        const officeClosed =
+            now.getHours() >= 17;
+
+        if (
+            elapsedHours >= 1 ||
+            officeClosed
+        ) {
+
+           db.prepare(`
+    UPDATE official_status
+    SET
+        presence = 'ABSENT',
+        availability = 'AVAILABLE',
+        updated_at = ?
+    WHERE employee_id = ?
+`).run(
+    now.toISOString(),
+    row.employee_id
+);
+
+        }
+
+    });
+
+}
+
+setInterval(() => {
+    updateExpiredEmployees();
+}, 10 * 1000);
+
 router.post("/attendance", (req, res) => {
+
+    updateExpiredEmployees();
 
     const { employeeId, status, date, time } = req.body;
 
@@ -48,30 +104,59 @@ router.post("/attendance", (req, res) => {
     `).get(employeeId, date, status);
 
     // Determine presence from attendance event
-    const presence = status === "ENTRY"
-        ? "PRESENT"
-        : "ABSENT";
-
     const updatedAt = new Date().toISOString();
 
-    // Update presence even if attendance already exists
+if (status === "ENTRY") {
+
     db.prepare(`
         UPDATE official_status
-        SET presence = ?, updated_at = ?
+        SET
+            presence = 'PRESENT',
+            availability = 'AVAILABLE',
+            last_exit_time = NULL,
+            updated_at = ?
         WHERE employee_id = ?
     `).run(
-        presence,
         updatedAt,
         employeeId
     );
 
+}else {
+
+    // Check current availability
+    const current = db.prepare(`
+        SELECT availability
+        FROM official_status
+        WHERE employee_id = ?
+    `).get(employeeId);
+
+    // Only change if employee was AVAILABLE
+    if (
+    current &&
+    current.availability === "AVAILABLE"
+) {
+
+    db.prepare(`
+        UPDATE official_status
+        SET
+            availability = 'TEMPORARILY UNAVAILABLE',
+            last_exit_time = ?,
+            updated_at = ?
+        WHERE employee_id = ?
+    `).run(
+        updatedAt,
+        updatedAt,
+        employeeId
+    );
+}
+}
     // If already recorded, don't create another attendance event
     if (existing) {
         return res.status(200).json({
             success: true,
             message: "Attendance already recorded.",
             attendanceId: existing.id,
-            presence: presence
+            employeeId: employeeId
         });
     }
 
@@ -92,7 +177,7 @@ router.post("/attendance", (req, res) => {
         message: "Attendance recorded successfully.",
         attendanceId: result.lastInsertRowid,
         employeeId: employeeId,
-        presence: presence
+       
     });
 });
 
@@ -189,7 +274,8 @@ router.put("/employees/:employeeId/status", (req, res) => {
     const allowedStatuses = [
         "AVAILABLE",
         "TEMPORARILY UNAVAILABLE",
-        "ON OFFICIAL DUTY"
+        "ON OFFICIAL DUTY",
+        
     ];
 
     if (!allowedStatuses.includes(availability)) {
@@ -200,12 +286,39 @@ router.put("/employees/:employeeId/status", (req, res) => {
     }
 
     const updatedAt = new Date().toISOString();
+    let result;
+    if (availability === "TEMPORARILY UNAVAILABLE") {
 
-    const result = db.prepare(`
+    result = db.prepare(`
         UPDATE official_status
-        SET availability = ?, updated_at = ?
+        SET
+            availability = ?,
+            last_exit_time = ?,
+            updated_at = ?
         WHERE employee_id = ?
-    `).run(availability, updatedAt, employeeId);
+    `).run(
+        availability,
+        updatedAt,
+        updatedAt,
+        employeeId
+    );
+
+} else {
+
+    result = db.prepare(`
+        UPDATE official_status
+        SET
+            availability = ?,
+            last_exit_time = NULL,
+            updated_at = ?
+        WHERE employee_id = ?
+    `).run(
+        availability,
+        updatedAt,
+        employeeId
+    );
+
+}
 
     if (result.changes === 0) {
         return res.status(404).json({

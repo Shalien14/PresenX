@@ -31,22 +31,126 @@ db.prepare(`
 `).run();
 
 // Current official status
+
 db.prepare(`
     CREATE TABLE IF NOT EXISTS official_status (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         employee_id TEXT UNIQUE NOT NULL,
-        presence TEXT NOT NULL CHECK(presence IN ('PRESENT', 'ABSENT')),
+        presence TEXT NOT NULL CHECK(
+            presence IN ('PRESENT', 'ABSENT')
+        ),
         availability TEXT NOT NULL CHECK(
             availability IN (
                 'AVAILABLE',
                 'TEMPORARILY UNAVAILABLE',
-                'ON OFFICIAL DUTY'
+                'ON OFFICIAL DUTY',
+                'UNAVAILABLE'
             )
         ),
+        last_exit_time TEXT,
         updated_at TEXT NOT NULL,
-        FOREIGN KEY (employee_id) REFERENCES employees(employee_id)
+        organisation_id INTEGER,
+        FOREIGN KEY (employee_id)
+            REFERENCES employees(employee_id)
     )
 `).run();
+
+
+const officialTableInfo = db.prepare(
+    "PRAGMA table_info(official_status)"
+).all();
+
+const officialColumnNames = new Set(
+    officialTableInfo.map(column => column.name)
+);
+
+const officialTableSql = db.prepare(`
+    SELECT sql
+    FROM sqlite_master
+    WHERE type = 'table'
+      AND name = 'official_status'
+`).get()?.sql || "";
+
+const needsMigration =
+    !officialTableSql.includes("'UNAVAILABLE'") ||
+    !officialColumnNames.has("last_exit_time") ||
+    !officialColumnNames.has("organisation_id");
+
+if (needsMigration) {
+    console.log("Migrating official_status table...");
+
+    const hasLastExitTime =
+        officialColumnNames.has("last_exit_time");
+
+    const hasOrganisationId =
+        officialColumnNames.has("organisation_id");
+
+    const copyLastExitTime = hasLastExitTime
+        ? "last_exit_time"
+        : "NULL";
+
+    const copyOrganisationId = hasOrganisationId
+        ? "organisation_id"
+        : "NULL";
+
+    const migrate = db.transaction(() => {
+        db.exec(`
+            CREATE TABLE official_status_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                employee_id TEXT UNIQUE NOT NULL,
+                presence TEXT NOT NULL CHECK(
+                    presence IN ('PRESENT', 'ABSENT')
+                ),
+                availability TEXT NOT NULL CHECK(
+                    availability IN (
+                        'AVAILABLE',
+                        'TEMPORARILY UNAVAILABLE',
+                        'ON OFFICIAL DUTY',
+                        'ABSENT'
+                    )
+                ),
+                last_exit_time TEXT,
+                updated_at TEXT NOT NULL,
+                organisation_id INTEGER,
+                FOREIGN KEY (employee_id)
+                    REFERENCES employees(employee_id)
+            );
+        `);
+
+        db.exec(`
+            INSERT INTO official_status_new (
+                id,
+                employee_id,
+                presence,
+                availability,
+                last_exit_time,
+                updated_at,
+                organisation_id
+            )
+            SELECT
+                id,
+                employee_id,
+                presence,
+                availability,
+                ${copyLastExitTime},
+                updated_at,
+                ${copyOrganisationId}
+            FROM official_status;
+        `);
+
+        db.exec(`
+            DROP TABLE official_status;
+            ALTER TABLE official_status_new
+            RENAME TO official_status;
+        `);
+    });
+
+    migrate();
+
+    console.log("official_status migration completed.");
+}
+
+
 
 //create torganisation
 db.prepare(`

@@ -7,8 +7,12 @@ import requests
 from datetime import datetime, date
 from pathlib import Path
 from insightface.app import FaceAnalysis
+import time
 
 API_BASE_URL = "http://localhost:5001/api"
+
+CURRENT_MODE = "ENTRY"
+
 
 # ============================================================
 # PATHS (matched to your PresenX structure)
@@ -39,10 +43,11 @@ DET_SIZE = (320, 320)
 # INITIALIZATION
 # ============================================================
 
-print("Loading InsightFace model...")
-app = FaceAnalysis(name="buffalo_l", providers=["CPUExecutionProvider"])
-app.prepare(ctx_id=-1, det_size=DET_SIZE)
-print("Model loaded.")
+# ============================================================
+# INITIALIZATION
+# ============================================================
+
+app = None
 
 # ============================================================
 # HELPERS
@@ -136,6 +141,9 @@ def recognize_face(query_embedding, database):
     return best_employee_id, best_score
 
 
+
+
+
 # ============================================================
 # ATTENDANCE
 # ============================================================
@@ -226,6 +234,22 @@ def get_today_attendance():
 #         print(f"ERROR: Could not connect to PresenX backend: {e}")
 #         return {}
 
+##status update
+def update_employee_status(employee_id, availability):
+    try:
+        response = requests.put(
+            f"{API_BASE_URL}/employees/{employee_id}/status",
+            json={
+                "availability": availability
+            }
+        )
+
+        return response.ok
+
+    except Exception as e:
+        print(e)
+        return False
+
 # ============================================================
 # SEND ATTENDANCE TO YOUR BACKEND
 # ============================================================
@@ -275,6 +299,16 @@ def send_attendance(employee_id, status="ENTRY"):
 # ============================================================
 
 def main():
+    global app
+    global CURRENT_MODE
+    
+    print("Loading InsightFace model...")
+    app = FaceAnalysis(
+        name="buffalo_l",
+        providers=["CPUExecutionProvider"]
+    )
+    app.prepare(ctx_id=-1, det_size=DET_SIZE)
+    print("Model loaded.")
     # Set force_rebuild=True if you want to completely rebuild the database
     known_database = load_or_build_database(force_rebuild=False)
 
@@ -315,14 +349,23 @@ def main():
 
     print("\nPresenX Attendance Engine v4 started")
     print(f"Known faces : {list(known_database.keys())}")
-    print("Press 'q' to quit | 'a' to show today's attendance\n")
+    print("A = ENTRY MODE")
+    print("E = EXIT MODE")
+    print("Q = Quit")
 
     attendance_recorded = set()
     attendance_count = 0
     last_attendance_refresh = 0
+    start_time = time.time()
+    MAX_DURATION = 5 * 60  # 5 minutes in seconds
+    
 
     while True:
+        if time.time() - start_time >= MAX_DURATION:
+                print("5 minutes elapsed. Stopping face recognition.")
+                break
         ret, frame = cap.read()
+        
         if not ret:
             print("ERROR: Failed to read frame from webcam.")
             break
@@ -355,17 +398,30 @@ def main():
 
                     if confirmation_counter[employee_id] >= CONFIRMATION_FRAMES:
 
-                        if employee_id not in attendance_recorded:
+                        if CURRENT_MODE == "ENTRY":
 
                             success = mark_attendance(
-                                employee_id,
-                                similarity
+                            employee_id,
+                            similarity
                             )
 
                             if success:
-                                attendance_recorded.add(employee_id)
+                                update_employee_status(
+                                employee_id,
+                                "AVAILABLE"
+                            )
 
-                        confirmation_counter[employee_id] = 0 
+                        elif CURRENT_MODE == "EXIT":
+
+                            success = update_employee_status(
+                            employee_id,
+                            "TEMPORARILY UNAVAILABLE"
+                            )
+
+                            if success:
+                                print(
+                                    f"{employee_id} marked TEMPORARILY_UNAVAILABLE"
+                                    )
 
             # Decay people who disappeared
             for employee_id in list(confirmation_counter.keys()):
@@ -403,18 +459,12 @@ def main():
         if key == ord("q"):
             break
         elif key == ord("a"):
-            print("\n===== Today's Attendance =====")
-            rows = get_today_attendance()
-            if not rows:
-                print("  No one marked yet today.")
-            else:
-                for r in rows:
-                    print(
-                        f"  {r['name']:<18} "
-                        f"{r['date']} {r['time']}  "
-                        f"{r['status']}"
-                    )
-            print("==============================\n")
+            CURRENT_MODE = "ENTRY"
+            print("ENTRY MODE ACTIVE")
+
+        elif key == ord("e"):
+            CURRENT_MODE = "EXIT"
+            print("EXIT MODE ACTIVE")
 
     cap.release()
     cv2.destroyAllWindows()
