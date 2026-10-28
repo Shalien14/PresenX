@@ -328,6 +328,13 @@ if (!organisationColumns.some(col => col.name === "password")) {
     `).run();
 }
 
+if (!officialStatusColumns.some(col => col.name === "last_exit_time")) {
+    db.prepare(`
+        ALTER TABLE official_status
+        ADD COLUMN last_exit_time TEXT
+    `).run();
+}
+
 if (!organisationColumns.some(col => col.name === "account_created")) {
     db.prepare(`
         ALTER TABLE organisations
