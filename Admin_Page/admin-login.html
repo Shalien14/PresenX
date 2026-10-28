@@ -1,0 +1,388 @@
+
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width,initial-scale=1" name="viewport"/>
+  <title>
+   PresenX | Administrator Sign In
+  </title>
+  <style>
+   :root {
+    color-scheme:dark;
+    --bg:#070d19;
+    --panel:#101b2b;
+    --line:#26354a;
+    --muted:#9aacbf;
+    --cyan:#45e3e0;
+    --white:#f4f8ff
+}
+* {
+    box-sizing:border-box
+}
+body {
+    margin:0;
+    min-height:100vh;
+    background:radial-gradient(circle at 75% 12%,#113049 0,transparent 35%),var(--bg);
+    font-family:Inter,'Segoe UI',Arial,sans-serif;
+    color:var(--white);
+    display:grid;
+    place-items:center;
+    padding:28px
+}
+
+/* Admin Login Box Entrance Animation */
+@keyframes adminBoxEntrance {
+    from {
+        opacity:0;
+        transform:translateY(35px) scale(0.96);
+    }
+    to {
+        opacity:1;
+        transform:translateY(0) scale(1);
+    }
+}
+
+.shell {
+    width:min(1060px,100%);
+    min-height:610px;
+    display:grid;
+    grid-template-columns:1.08fr 1fr;
+    border:1px solid #25374c;
+    border-radius:24px;
+    overflow:hidden;
+    background:#0e1828;
+    box-shadow:0 32px 100px #0007;
+    animation:adminBoxEntrance 0.9s ease-out both;
+}
+.hero {
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    padding:48px;
+    background:radial-gradient(circle at 50% 50%,#16415b 0,transparent 48%),linear-gradient(145deg,#10253b,#091524);
+    overflow:hidden
+}
+.hero:before {
+    content:'';
+    position:absolute;
+    inset:0;
+    background-image:linear-gradient(#3de5dd12 1px,transparent 1px),linear-gradient(90deg,#3de5dd12 1px,transparent 1px);
+    background-size:40px 40px;
+    mask-image:linear-gradient(to bottom,transparent,#000 30%,transparent)
+}
+.hero>* {
+    position:relative
+}
+.brand {
+    font-weight:800;
+    letter-spacing:-1.4px;
+    font-size:30px
+}
+.brand span {
+    color:var(--cyan)
+}
+.eyebrow {
+    color:var(--cyan);
+    font-size:12px;
+    letter-spacing:3px;
+    font-weight:700;
+    text-transform:uppercase
+}
+.hero h1 {
+    font-size:clamp(34px,4vw,53px);
+    letter-spacing:-2px;
+    line-height:1.12;
+    margin:14px 0
+}
+.hero p {
+    color:#bbcbda;
+    line-height:1.7;
+    max-width:390px
+}
+.orb {
+    width:240px;
+    height:240px;
+    border:1px solid #4ce8e55e;
+    border-radius:50%;
+    margin:24px auto;
+    display:grid;
+    place-items:center;
+    box-shadow:0 0 0 22px #4ce8e50a,0 0 0 55px #4ce8e509,inset 0 0 60px #4ce8e51a;
+    animation:float 7s ease-in-out infinite
+}
+.orb svg {
+    width:110px;
+    height:110px;
+    stroke:var(--cyan);
+    fill:none;
+    stroke-width:1.5
+}
+.foot {
+    font-size:12px;
+    color:#8197ad
+}
+.formside {
+    padding:60px 54px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center
+}
+.pill {
+    display:inline-flex;
+    align-items:center;
+    gap:9px;
+    width:max-content;
+    border:1px solid #295564;
+    background:#10303d;
+    border-radius:100px;
+    padding:8px 12px;
+    font-size:12px;
+    color:#8ff4ed;
+    font-weight:700
+}
+.dot {
+    width:7px;
+    height:7px;
+    background:var(--cyan);
+    border-radius:50%;
+    box-shadow:0 0 10px var(--cyan)
+}
+h2 {
+    font-size:32px;
+    letter-spacing:-1px;
+    margin:22px 0 8px
+}
+.sub {
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.7;
+    margin:0 0 34px
+}
+label {
+    display:block;
+    font-size:13px;
+    font-weight:600;
+    margin:0 0 9px
+}
+.field {
+    position:relative;
+    margin-bottom:22px
+}
+.field input {
+    width:100%;
+    height:52px;
+    padding:0 46px 0 16px;
+    border-radius:11px;
+    border:1px solid #324258;
+    background:#0b1422;
+    color:white;
+    font-size:14px;
+    outline:none;
+    transition:.2s
+}
+.field input:focus {
+    border-color:var(--cyan);
+    box-shadow:0 0 0 3px #45e3e01a
+}
+.field input::placeholder {
+    color:#73869c
+}
+.toggle {
+    position:absolute;
+    right:12px;
+    top:12px;
+    background:transparent;
+    border:0;
+    color:#b7c7d5;
+    cursor:pointer;
+    padding:5px;
+    font-size:12px
+}
+.submit {
+    height:52px;
+    width:100%;
+    border:0;
+    border-radius:11px;
+    background:linear-gradient(110deg,#4ce5e1,#1ca8c4);
+    color:#06202d;
+    font-weight:800;
+    font-size:15px;
+    cursor:pointer;
+    transition:.2s
+}
+.submit:hover {
+    filter:brightness(1.08);
+    transform:translateY(-1px)
+}
+.submit:disabled {
+    opacity:.65;
+    cursor:wait
+}
+.message {
+    min-height:22px;
+    margin:15px 0 0;
+    font-size:13px;
+    color:#fba4a4
+}
+.note {
+    font-size:12px;
+    color:#8398ad;
+    margin-top:32px;
+    text-align:center;
+    line-height:1.6
+}
+@keyframes float {
+    50% {
+        transform:translateY(-9px)
+    }
+}
+@media(max-width:800px) {
+    .shell {
+        grid-template-columns:1fr
+    }
+    .hero {
+        padding:28px
+    }
+    .hero h1 {
+        font-size:29px
+    }
+    .hero .orb {
+        display:none
+    }
+    .hero p {
+        margin-bottom:0
+    }
+    .formside {
+        padding:40px 28px
+    }
+}
+@media(prefers-reduced-motion:reduce) {
+    * {
+        animation:none!important;
+        transition:none!important
+    }
+}
+  </style>
+ </head>
+ <body>
+  <main class="shell">
+   <section aria-label="PresenX branding" class="hero">
+    <div class="brand">
+     Presen
+     <span>
+      X
+     </span>
+     <span style="font-size:12px;vertical-align:top;margin-left:8px;letter-spacing:1px;color:#9cbbca">
+      ADMIN
+     </span>
+    </div>
+    <div>
+     <div class="eyebrow">
+      Intelligent Presence Management
+     </div>
+     <h1>
+      Control with
+      <br/>
+      confidence.
+     </h1>
+     <p>
+      A secure workspace for overseeing official presence, availability, and organisational operations.
+     </p>
+     <div aria-hidden="true" class="orb">
+      <svg viewBox="0 0 100 100">
+       <path d="M50 9 80 21v26c0 22-14 35-30 44C34 82 20 69 20 47V21Z">
+       </path>
+       <path d="M37 50 46 59 65 40">
+       </path>
+       <circle cx="50" cy="50" r="32" stroke-dasharray="3 5">
+       </circle>
+      </svg>
+     </div>
+    </div>
+    <div class="foot">
+     PRESENX &middot; SMART OFFICIAL PRESENCE &amp; AVAILABILITY MONITORING SYSTEM
+    </div>
+   </section>
+   <section class="formside">
+    <div class="pill">
+     <span class="dot">
+     </span>
+     RESTRICTED ADMIN ACCESS
+    </div>
+    <h2>
+     Welcome back
+    </h2>
+    <p class="sub">
+     Sign in with your administrator credentials to access the PresenX control panel.
+    </p>
+    <form id="loginForm" novalidate="">
+     <label for="username">
+      Administrator email or username
+     </label>
+     <div class="field">
+      <input autocomplete="username" id="username" name="username" placeholder="Enter your admin account" required="" type="text"/>
+     </div>
+     <label for="password">
+      Password
+     </label>
+     <div class="field">
+      <input autocomplete="current-password" id="password" name="password" placeholder="Enter your password" required="" type="password"/>
+      <button aria-label="Show password" class="toggle" id="togglePassword" type="button">
+       Show
+      </button>
+     </div>
+     <button class="submit" id="submitBtn" type="submit">
+      Sign in to Admin Panel &rarr;
+     </button>
+     <p aria-live="polite" class="message" id="message" role="alert">
+     </p>
+    </form>
+    <p class="note">
+     Authorised administrators only.
+     <br/>
+     Protected by your organisation's access controls.
+    </p>
+   </section>
+  </main>
+  <script>
+   const form = document.getElementById('loginForm');
+const toggle = document.getElementById('togglePassword');
+const pass = document.getElementById('password');
+const message = document.getElementById('message');
+const submit = document.getElementById('submitBtn');
+
+toggle.addEventListener('click', () => {
+    const show = pass.type === 'password';
+    pass.type = show ? 'text' : 'password';
+    toggle.textContent = show ? 'Hide' : 'Show';
+    toggle.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+});
+
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    message.textContent = '';
+
+    if (!form.reportValidity()) return;
+
+    submit.disabled = true;
+    submit.textContent = 'Checking credentials…';
+
+    try {
+        // FRONTEND DEMO ONLY: Replace this block with your existing
+        // PresenX administrator authentication endpoint.
+        // POST using fetch with credentials: 'same-origin', verify the
+        // server-confirmed administrator role, then redirect.
+        message.textContent =
+            'Login interface ready. Connect it to the existing PresenX administrator authentication API.';
+    } catch (err) {
+        message.textContent = 'Unable to sign in. Please try again.';
+    } finally {
+        submit.disabled = false;
+        submit.textContent = 'Sign in to Admin Panel →';
+    }
+});
+  </script>
+ </body>
+</html>

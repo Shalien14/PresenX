@@ -5,10 +5,83 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Presence - Don't Make an Unnecessary Trip</title>
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        .intro-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            background: #070d19;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            opacity: 1;
+            transition: opacity 0.7s ease;
+        }
+
+        .intro-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Responsive PresenX Logo Reveal */
+        .intro-overlay video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            display: block;
+        }
+
+
+        .skip-intro {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+
+            padding: 12px 22px;
+            background: rgba(7, 13, 25, 0.8);
+            color: #45e3e0;
+            border: 1px solid #45e3e0;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        /* Tablet and Mobile */
+        @media (max-width: 768px) {
+            .intro-overlay video {
+                object-fit: contain;
+            }
+
+            .skip-intro {
+                bottom: 20px;
+                right: 20px;
+                padding: 10px 16px;
+                font-size: 13px;
+            }
+        }
+    </style>
 </head>
 
 <body class="hero-wrapper">
+    <div id="introOverlay" class="intro-overlay">
+        <video
+            id="introVideo"
+            autoplay
+            muted
+            playsinline
+            preload="auto"
+        >
+            <source
+                src="videos/PresenX-LOGO.mp4"
+                type="video/mp4"
+            >
+        </video>
 
+        <button id="skipIntro" class="skip-intro" type="button">
+            Skip Intro →
+        </button>
+    </div>
     <section class="hero-card">
         <!-- Top Pill Badge -->
         <div class="hero-badge">
@@ -163,6 +236,49 @@
 
             window.location.href =
                 `index.html?organisation=${orgId}`;
+        });
+        // ========================================
+        // PresenX Logo Reveal Intro
+        // ========================================
+
+        const introOverlay = document.getElementById("introOverlay");
+        const introVideo = document.getElementById("introVideo");
+
+        // Play the 7-second video in 5 seconds
+        introVideo.playbackRate = 1.4;
+
+        const skipIntro = document.getElementById("skipIntro");
+
+        let introClosed = false;
+
+        // Close the intro and show homepage
+        function closeIntro() {
+            if (introClosed) return;
+
+            introClosed = true;
+            introVideo.pause();
+
+            introOverlay.classList.add("hidden");
+
+            // Remove overlay after fade-out animation
+            setTimeout(() => {
+                introOverlay.remove();
+            }, 700);
+        }
+
+        // Automatically close when video finishes
+        introVideo.addEventListener("ended", closeIntro);
+
+        // Close if video cannot load
+        introVideo.addEventListener("error", closeIntro);
+
+        // Skip button
+        skipIntro.addEventListener("click", closeIntro);
+
+        // Start video playback
+        introVideo.play().catch((error) => {
+            console.warn("Intro video could not play:", error);
+            closeIntro();
         });
     </script>
 
