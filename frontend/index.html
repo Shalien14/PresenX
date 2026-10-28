@@ -18,7 +18,7 @@
       <li><a href="#" id="directory-link" class="nav-link">
   Directory
 </a></li>
-      <li><a href="login.html" class="nav-link btn-login">Staff Login</a></li>
+      <li><a href="#" id="login-link" class="nav-link btn-login">Staff Login</a></li>
     </ul>
   </nav>
 
@@ -63,7 +63,9 @@ const organisationId = params.get("organisation");
 document.getElementById("directory-link").href =
     `index.html?organisation=${organisationId}`;
     
-
+document.getElementById("login-link").href =
+    `login.html?organisation=${organisationId}`;
+    
     </script>
 </body>
 </html>
